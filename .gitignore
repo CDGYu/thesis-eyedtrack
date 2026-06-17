@@ -131,4 +131,13 @@ Thumbs.db
 *.dat
 *.h5
 *.pkl
-*.model 
+*.model
+
+# Android / Gradle build (machine-specific)
+.gradle/
+local.properties
+*.apk
+*.iml
+.cxx/
+sdk/.cxx/
+captures/ 

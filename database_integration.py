@@ -1,365 +1,194 @@
 """
-Enhanced API server for mobile app integration
-Add this to your existing database_integration.py or create as mobile_api.py
+Database-backed REST endpoints for the EyeDTrack mobile app.
+
+This module exposes a Flask **Blueprint** (`db_bp`) that serves driver-behavior history and
+dashboard summaries from the MySQL persistence layer (``utils/db_manager.py`` +
+``models/schema.py``).
+
+It deliberately does **not** run its own Flask server or open its own database connection.
+``main.py`` owns the Flask app, the ``DatabaseManager``, and the active monitoring session, and
+shares them with this blueprint via :func:`attach_database`. That avoids the old design's bugs
+(a second Flask app fighting for port 5000, a mocked SocketIO worker emitting fake data, and
+calls to ``DatabaseManager`` methods that never existed).
+
+When MySQL is disabled (``integration.database.enabled: false``) or unreachable, every endpoint
+responds with HTTP 503 and a clear message instead of crashing.
+
+Endpoints (all read-only except cleanup):
+    GET  /api/db/health              -> is persistence active?
+    GET  /api/db/behaviors/recent    -> recent behaviors (?hours, ?limit)
+    GET  /api/db/dashboard/summary   -> aggregated risk dashboard (?hours)
+    GET  /api/db/session/summary     -> summary for the current monitoring session (?session_id)
+    POST /api/db/cleanup             -> delete data older than N days (?days)
 """
 
-from flask import Flask, request, jsonify, Response
-from flask_cors import CORS
-from flask_socketio import SocketIO, emit
-import json
-import base64
-import cv2
-import numpy as np
-import threading
-import time
-from datetime import datetime, timedelta
 import logging
+from datetime import datetime
 
-from database_integration import DatabaseManager
-from main import run_driver_monitoring  # Your main monitoring function
-
-app = Flask(__name__)
-CORS(app)
-socketio = SocketIO(app, cors_allowed_origins="*")
-
-# Initialize database manager
-db_manager = DatabaseManager()
-
-# Global variables for real-time monitoring
-monitoring_active = False
-monitoring_thread = None
-latest_frame = None
-latest_results = None
+from flask import Blueprint, request, jsonify
 
 logger = logging.getLogger(__name__)
 
-class MobileAPIServer:
-    def __init__(self, host='0.0.0.0', port=5000):
-        self.host = host
-        self.port = port
-        self.monitoring_active = False
-        
-    def start_monitoring_session(self):
-        """Start a new monitoring session"""
-        global monitoring_active, monitoring_thread
-        
-        if not monitoring_active:
-            monitoring_active = True
-            monitoring_thread = threading.Thread(
-                target=self._monitoring_worker,
-                daemon=True
-            )
-            monitoring_thread.start()
-            return True
-        return False
-    
-    def stop_monitoring_session(self):
-        """Stop the current monitoring session"""
-        global monitoring_active
-        monitoring_active = False
-        return True
-    
-    def _monitoring_worker(self):
-        """Background worker for monitoring (simplified version)"""
-        # This would integrate with your main monitoring pipeline
-        # For now, we'll simulate data
-        while monitoring_active:
-            # In real implementation, this would get data from your main pipeline
-            # You'd need to modify your main.py to expose results via a queue or callback
-            
-            # Simulate monitoring data
-            mock_data = {
-                "timestamp": datetime.now().isoformat(),
-                "behavior": "attentive driver",
-                "confidence": 0.85,
-                "is_risky": False,
-                "ear": 0.25,
-                "mar": 0.15,
-                "head_pose": {"pitch": 2.1, "yaw": -1.5, "roll": 0.8},
-                "session_id": "mobile_session_" + str(int(time.time()))
-            }
-            
-            # Emit to connected mobile clients
-            socketio.emit('monitoring_update', mock_data, namespace='/mobile')
-            
-            # Log to database if risky
-            if mock_data.get('is_risky'):
-                db_manager.log_risky_behavior(mock_data)
-            
-            time.sleep(1)  # Update every second
+db_bp = Blueprint("database", __name__)
 
-# REST API Endpoints
-@app.route('/api/mobile/session/start', methods=['POST'])
-def start_session():
-    """Start a new monitoring session"""
-    try:
-        api_server = MobileAPIServer()
-        success = api_server.start_monitoring_session()
-        
-        if success:
-            session_data = {
-                "session_id": f"mobile_session_{int(time.time())}",
-                "start_time": datetime.now().isoformat(),
-                "status": "active"
-            }
-            return jsonify({
-                "success": True,
-                "session": session_data,
-                "message": "Monitoring session started"
-            })
-        else:
-            return jsonify({
-                "success": False,
-                "message": "Session already active"
-            }), 400
-            
-    except Exception as e:
-        logger.error(f"Error starting session: {e}")
-        return jsonify({
+# Populated by main.initialize_system() through attach_database(). Held in a dict so the
+# reference can be swapped at runtime without re-importing the module.
+_state = {"manager": None, "session_id": None}
+
+
+def attach_database(db_manager, session_id):
+    """Wire the shared DatabaseManager and active monitoring session into the blueprint.
+
+    Call with ``(None, None)`` when persistence is disabled — the endpoints then report 503.
+    """
+    _state["manager"] = db_manager
+    _state["session_id"] = session_id
+    if db_manager is not None:
+        logger.info("Database blueprint attached (session %s)", session_id)
+    else:
+        logger.info("Database blueprint attached in disabled mode (no MySQL)")
+
+
+def _require_manager():
+    """Return ``(manager, None)`` when available, else ``(None, <503 response tuple>)``."""
+    manager = _state["manager"]
+    if manager is None:
+        response = jsonify({
             "success": False,
-            "message": str(e)
-        }), 500
+            "error": "Database persistence is disabled or unavailable",
+            "hint": "Set integration.database.enabled: true in config.yaml and ensure MySQL is reachable",
+        })
+        return None, (response, 503)
+    return manager, None
 
-@app.route('/api/mobile/session/stop', methods=['POST'])
-def stop_session():
-    """Stop the current monitoring session"""
+
+@db_bp.route("/api/db/health", methods=["GET"])
+def db_health():
+    """Report whether MySQL persistence is active and which session is logging."""
+    return jsonify({
+        "success": True,
+        "database_enabled": _state["manager"] is not None,
+        "session_id": _state["session_id"],
+        "timestamp": datetime.now().isoformat(),
+    }), 200
+
+
+@db_bp.route("/api/db/behaviors/recent", methods=["GET"])
+def recent_behaviors():
+    """Recent driver behaviors. Query params: ``hours`` (default 24), ``limit`` (default 100)."""
+    manager, err = _require_manager()
+    if err:
+        return err
+
+    hours = request.args.get("hours", default=24, type=int)
+    limit = request.args.get("limit", default=100, type=int)
     try:
-        api_server = MobileAPIServer()
-        success = api_server.stop_monitoring_session()
-        
+        behaviors = manager.get_recent_behaviors(hours=hours, limit=limit)
         return jsonify({
             "success": True,
-            "message": "Monitoring session stopped"
-        })
-        
+            "behaviors": behaviors,
+            "returned_count": len(behaviors),
+            "hours": hours,
+            "timestamp": datetime.now().isoformat(),
+        }), 200
     except Exception as e:
-        logger.error(f"Error stopping session: {e}")
-        return jsonify({
-            "success": False,
-            "message": str(e)
-        }), 500
+        logger.error("recent_behaviors failed: %s", e, exc_info=True)
+        return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route('/api/mobile/behaviors/recent', methods=['GET'])
-def get_recent_behaviors():
-    """Get recent risky behaviors for mobile dashboard"""
-    try:
-        # Get time range from query params
-        hours = request.args.get('hours', 24, type=int)
-        limit = request.args.get('limit', 50, type=int)
-        
-        # Calculate start time
-        start_time = (datetime.now() - timedelta(hours=hours)).isoformat()
-        
-        # Get behaviors from database
-        behaviors = db_manager.get_risky_behaviors(
-            start_time=start_time,
-            limit=limit
-        )
-        
-        # Format for mobile consumption
-        mobile_behaviors = []
-        for behavior in behaviors:
-            mobile_behavior = {
-                "id": behavior.get("id"),
-                "timestamp": behavior.get("timestamp"),
-                "behavior": behavior.get("behavior"),
-                "confidence": behavior.get("confidence"),
-                "risk_level": "high" if behavior.get("confidence", 0) > 0.7 else "moderate",
-                "metrics": {
-                    "ear": behavior.get("ear"),
-                    "mar": behavior.get("mar"),
-                    "head_pose": behavior.get("head_pose")
-                }
-            }
-            mobile_behaviors.append(mobile_behavior)
-        
-        return jsonify({
-            "success": True,
-            "behaviors": mobile_behaviors,
-            "total_count": len(mobile_behaviors)
-        })
-        
-    except Exception as e:
-        logger.error(f"Error getting recent behaviors: {e}")
-        return jsonify({
-            "success": False,
-            "message": str(e)
-        }), 500
 
-@app.route('/api/mobile/dashboard/summary', methods=['GET'])
-def get_dashboard_summary():
-    """Get dashboard summary for mobile app"""
+@db_bp.route("/api/db/dashboard/summary", methods=["GET"])
+def dashboard_summary():
+    """Aggregate recent behaviors into a mobile dashboard summary. Query param: ``hours`` (default 24)."""
+    manager, err = _require_manager()
+    if err:
+        return err
+
+    hours = request.args.get("hours", default=24, type=int)
     try:
-        # Get time range from query params
-        hours = request.args.get('hours', 24, type=int)
-        start_time = (datetime.now() - timedelta(hours=hours)).isoformat()
-        
-        # Get summary from database
-        summary = db_manager.get_behavior_summary(start_time=start_time)
-        
-        # Calculate additional metrics for mobile dashboard
-        total_behaviors = summary.get("total_count", 0)
-        risk_score = 0
-        
-        if total_behaviors > 0:
-            drowsy_pct = (summary.get("drowsy_count", 0) / total_behaviors) * 100
-            distracted_pct = (summary.get("distracted_count", 0) / total_behaviors) * 100
-            yawning_pct = (summary.get("yawning_count", 0) / total_behaviors) * 100
-            
-            # Calculate overall risk score
-            risk_score = min(100, drowsy_pct * 2 + distracted_pct * 1.5 + yawning_pct * 1.2)
-        
-        # Determine safety status
+        # get_recent_behaviors is the real API; aggregate the window in-process.
+        behaviors = manager.get_recent_behaviors(hours=hours, limit=100000)
+
+        counts = {"drowsy": 0, "yawning": 0, "distracted": 0}
+        ear_vals, mar_vals, conf_vals = [], [], []
+        for b in behaviors:
+            name = b.get("behavior")
+            if name in counts:
+                counts[name] += 1
+            if b.get("ear") is not None:
+                ear_vals.append(b["ear"])
+            if b.get("mar") is not None:
+                mar_vals.append(b["mar"])
+            if b.get("confidence") is not None:
+                conf_vals.append(b["confidence"])
+
+        # Weight drowsiness highest, then distraction, then yawning.
+        risk_score = min(100.0, counts["drowsy"] * 2 + counts["distracted"] * 1.5 + counts["yawning"] * 1.2)
         if risk_score > 60:
-            safety_status = "high_risk"
-            safety_message = "High risk detected - please take a break"
+            status, message = "high_risk", "High risk detected - please take a break"
         elif risk_score > 30:
-            safety_status = "moderate_risk"
-            safety_message = "Moderate risk - stay alert"
+            status, message = "moderate_risk", "Moderate risk - stay alert"
         else:
-            safety_status = "safe"
-            safety_message = "Safe driving detected"
-        
-        mobile_summary = {
-            "safety_status": safety_status,
-            "safety_message": safety_message,
-            "risk_score": round(risk_score, 1),
-            "time_period_hours": hours,
-            "total_incidents": total_behaviors,
-            "incident_breakdown": {
-                "drowsy": summary.get("drowsy_count", 0),
-                "distracted": summary.get("distracted_count", 0),
-                "yawning": summary.get("yawning_count", 0)
-            },
-            "averages": {
-                "ear": round(summary.get("avg_ear", 0), 3),
-                "mar": round(summary.get("avg_mar", 0), 3),
-                "confidence": round(summary.get("avg_confidence", 0), 3)
-            },
-            "behavior_counts": summary.get("behavior_counts", {}),
-            "last_updated": datetime.now().isoformat()
-        }
-        
+            status, message = "safe", "Safe driving detected"
+
+        def avg(values):
+            return round(sum(values) / len(values), 3) if values else 0.0
+
         return jsonify({
             "success": True,
-            "summary": mobile_summary
-        })
-        
-    except Exception as e:
-        logger.error(f"Error getting dashboard summary: {e}")
-        return jsonify({
-            "success": False,
-            "message": str(e)
-        }), 500
-
-@app.route('/api/mobile/upload-frame', methods=['POST'])
-def upload_frame():
-    """Accept frame upload from mobile app for analysis"""
-    try:
-        data = request.get_json()
-        
-        if 'frame' not in data:
-            return jsonify({
-                "success": False,
-                "message": "No frame data provided"
-            }), 400
-        
-        # Decode base64 frame
-        frame_data = base64.b64decode(data['frame'])
-        np_array = np.frombuffer(frame_data, np.uint8)
-        frame = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
-        
-        if frame is None:
-            return jsonify({
-                "success": False,
-                "message": "Invalid frame data"
-            }), 400
-        
-        # TODO: Process frame with your monitoring pipeline
-        # For now, return mock analysis
-        analysis_result = {
-            "behavior": "attentive driver",
-            "confidence": 0.85,
-            "is_risky": False,
-            "risk_level": "safe",
-            "metrics": {
-                "ear": 0.25,
-                "mar": 0.15
+            "summary": {
+                "safety_status": status,
+                "safety_message": message,
+                "risk_score": round(risk_score, 1),
+                "time_period_hours": hours,
+                "total_incidents": len(behaviors),
+                "incident_breakdown": counts,
+                "averages": {"ear": avg(ear_vals), "mar": avg(mar_vals), "confidence": avg(conf_vals)},
+                "last_updated": datetime.now().isoformat(),
             },
-            "timestamp": datetime.now().isoformat()
-        }
-        
-        # Log to database if risky
-        if analysis_result.get('is_risky'):
-            db_manager.log_risky_behavior(analysis_result)
-        
+        }), 200
+    except Exception as e:
+        logger.error("dashboard_summary failed: %s", e, exc_info=True)
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@db_bp.route("/api/db/session/summary", methods=["GET"])
+def session_summary():
+    """Summary for the current monitoring session (or ``?session_id=`` to override)."""
+    manager, err = _require_manager()
+    if err:
+        return err
+
+    session_id = request.args.get("session_id", default=_state["session_id"], type=str)
+    if not session_id:
+        return jsonify({"success": False, "error": "No active monitoring session"}), 404
+    try:
+        summary = manager.get_session_summary(session_id)
         return jsonify({
             "success": True,
-            "analysis": analysis_result
-        })
-        
+            "session_id": session_id,
+            "summary": summary,
+            "timestamp": datetime.now().isoformat(),
+        }), 200
     except Exception as e:
-        logger.error(f"Error processing uploaded frame: {e}")
+        logger.error("session_summary failed: %s", e, exc_info=True)
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@db_bp.route("/api/db/cleanup", methods=["POST"])
+def cleanup_old_data():
+    """Maintenance: delete monitoring data older than N days. Query/body param: ``days`` (default 30)."""
+    manager, err = _require_manager()
+    if err:
+        return err
+
+    days = request.args.get("days", default=30, type=int)
+    try:
+        manager.cleanup_old_data(days=days)
         return jsonify({
-            "success": False,
-            "message": str(e)
-        }), 500
-
-# WebSocket Events for Real-time Communication
-@socketio.on('connect', namespace='/mobile')
-def mobile_connect():
-    """Handle mobile client connection"""
-    print(f"Mobile client connected: {request.sid}")
-    emit('connected', {'message': 'Connected to monitoring server'})
-
-@socketio.on('disconnect', namespace='/mobile')
-def mobile_disconnect():
-    """Handle mobile client disconnection"""
-    print(f"Mobile client disconnected: {request.sid}")
-
-@socketio.on('start_monitoring', namespace='/mobile')
-def handle_start_monitoring(data):
-    """Handle start monitoring request from mobile"""
-    try:
-        api_server = MobileAPIServer()
-        success = api_server.start_monitoring_session()
-        
-        if success:
-            emit('monitoring_started', {
-                'success': True,
-                'session_id': f"mobile_session_{int(time.time())}",
-                'message': 'Monitoring started successfully'
-            })
-        else:
-            emit('monitoring_error', {
-                'success': False,
-                'message': 'Session already active'
-            })
-            
+            "success": True,
+            "message": f"Deleted monitoring data older than {days} days",
+            "timestamp": datetime.now().isoformat(),
+        }), 200
     except Exception as e:
-        emit('monitoring_error', {
-            'success': False,
-            'message': str(e)
-        })
-
-@socketio.on('stop_monitoring', namespace='/mobile')
-def handle_stop_monitoring(data):
-    """Handle stop monitoring request from mobile"""
-    try:
-        api_server = MobileAPIServer()
-        api_server.stop_monitoring_session()
-        
-        emit('monitoring_stopped', {
-            'success': True,
-            'message': 'Monitoring stopped successfully'
-        })
-        
-    except Exception as e:
-        emit('monitoring_error', {
-            'success': False,
-            'message': str(e)
-        })
-
-if __name__ == '__main__':
-    # Start the Flask-SocketIO server
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+        logger.error("cleanup_old_data failed: %s", e, exc_info=True)
+        return jsonify({"success": False, "error": str(e)}), 500

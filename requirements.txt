@@ -1,11 +1,23 @@
+# Web API
 flask==3.0.0
 flask-cors==4.0.0
-numpy>=1.19.5
+flask-compress>=1.14
+
+# Computer vision / detection
 opencv-python>=4.5.3
 dlib>=19.22.0
-mediapipe>=0.8.9
+numpy>=1.19.5
+scipy>=1.7.1
+
+# Configuration
 pyyaml==6.0.1
-pillow>=8.3.2
-python-dotenv==1.0.0
+
+# Database (MySQL persistence layer — utils/db_manager.py, models/schema.py)
+SQLAlchemy>=2.0
+PyMySQL>=1.0
+
+# Deployment
 gunicorn==21.2.0
-scipy>=1.7.1 
+
+# NOTE: removed mediapipe / pillow / python-dotenv (no longer imported after cleanup).
+# If database_integration.py is revived for mobile WebSocket endpoints, add: flask-socketio

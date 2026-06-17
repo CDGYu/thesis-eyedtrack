@@ -5,8 +5,10 @@ Backend server for **EyeDTrack**, a real-time driver attention monitoring system
 ---
 
 ## Overview  
-This backend processes real-time video input to analyze driver attention using computer vision and machine learning.  
-It communicates with the Kotlin-based mobile frontend through REST APIs and performs inference using LLAVA and Haar Cascade models.
+This backend processes real-time video input to analyze driver attention using computer vision.  
+It communicates with the Kotlin-based mobile frontend through REST APIs and detects drowsiness, yawning,
+and distraction using **dlib** 68-point facial landmarks — Eye Aspect Ratio (EAR), Mouth Aspect Ratio (MAR),
+and geometric head-pose estimation.
 
 ---
 
@@ -19,10 +21,11 @@ It communicates with the Kotlin-based mobile frontend through REST APIs and perf
 ---
 
 ## Tech Stack  
-- **Language:** Python 3.9+  
-- **Frameworks:** Flask, Flask-CORS  
-- **Libraries:** OpenCV, dlib, MediaPipe, NumPy, Pillow, SciPy  
-- **Machine Learning:** LLAVA, Haar Cascade  
+- **Language:** Python 3.14  
+- **Frameworks:** Flask, Flask-CORS, Flask-Compress  
+- **Libraries:** OpenCV, dlib, NumPy, SciPy  
+- **Detection:** dlib 68-point facial landmarks (EAR / MAR / head-pose)  
+- **Persistence:** append-only JSON logs today; optional MySQL via SQLAlchemy + PyMySQL (see `CLEANUP_PLAN.md` §12)  
 
 ---
 
@@ -37,7 +40,7 @@ cd eyedtrack-backend
 pip install -r requirements.txt
 
 # Run the server
-py -3.11 main.py
+py -3.14 main.py
 ```
 
 ---

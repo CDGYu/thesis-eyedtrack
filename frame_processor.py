@@ -5,15 +5,9 @@ Uses only the ImprovedFaceAnalyzer for comprehensive behavior detection.
 
 import cv2
 import numpy as np
-import time
 import logging
-import threading
-import queue
 import os
-import traceback
-from typing import Dict, Any, Optional, Tuple, List, Deque
-from collections import deque
-import concurrent.futures
+from typing import Dict, Any, Optional
 from pathlib import Path
 from datetime import datetime
 
@@ -24,14 +18,6 @@ from behavior_categories import BEHAVIOR_CATEGORIES
 from event_logger import log_event, get_event_type
 
 logger = logging.getLogger(__name__)
-
-def normalize_angle(angle):
-    """Normalize angle to [-180, 180] range"""
-    while angle > 180:
-        angle -= 360
-    while angle < -180:
-        angle += 360
-    return angle
 
 class OptimizedFrameProcessor:
     def __init__(self, config):
@@ -66,31 +52,22 @@ class OptimizedFrameProcessor:
         self.yaw_threshold = detection_config.get("yaw_threshold", 25)    # Default yaw threshold
         self.pitch_threshold = detection_config.get("pitch_threshold", 15) # Default pitch threshold
         
-        # Performance optimizations
-        self.use_threading = config["performance"]["use_threading"]
-        self.max_workers = config["performance"]["max_workers"]
+        # Performance: frame resize factor (used in preprocess_frame)
         self.resize_factor = config["performance"]["resize_factor"]
-        self.use_roi = config["performance"]["use_roi"]
-        self.roi_margin = config["performance"]["roi_margin"]
-        
-        if self.use_threading:
-            self.thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers)
-        
-        # ROI tracking
-        self.last_face_roi = None
-        self.tracking_failures = 0
-        self.max_tracking_failures = config["face_detection"]["max_tracking_failures"]
-        
-        # Initialize video recorder
+
+        # CLAHE contrast enhancement, driven by config["clahe"] (built once, reused per frame)
+        clahe_cfg = config.get("clahe", {})
+        self.clahe_enabled = clahe_cfg.get("enabled", True)
+        self._clahe = cv2.createCLAHE(
+            clipLimit=clahe_cfg.get("clip_limit", 2.0),
+            tileGridSize=tuple(clahe_cfg.get("base_tile_grid_size", [8, 8])),
+        )
+
+        # Video recorder — retained for a future "record risky-behavior clips" feature.
+        # Instantiated but not yet wired into process_frame(); see CLEANUP_PLAN.md §13.
         video_output_dir = os.path.join(config["logging"]["log_dir"], "videos")
         self.video_recorder = VideoRecorder(video_output_dir)
-        
-        # Temporal smoothing
-        self.ear_history = deque(maxlen=5)
-        self.mar_history = deque(maxlen=5)
-        self.head_pose_history = deque(maxlen=5)
-        self.smoothing_alpha = config["head_pose"]["smoothing_alpha"]
-        
+
         # Event logging
         self.log_dir = Path(config["logging"]["log_dir"])
         
@@ -246,37 +223,14 @@ class OptimizedFrameProcessor:
             }
         
     def preprocess_frame(self, frame):
-        """Preprocess frame for better detection"""
+        """Preprocess frame: optional resize + config-driven CLAHE on the L channel."""
         if self.resize_factor != 1.0:
             frame = cv2.resize(frame, None, fx=self.resize_factor, fy=self.resize_factor)
-        
-        if self.config["clahe"]["enabled"]:
+
+        if self.clahe_enabled:
             lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
             l, a, b = cv2.split(lab)
-            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
-            cl = clahe.apply(l)
-            frame = cv2.cvtColor(cv2.merge((cl,a,b)), cv2.COLOR_LAB2BGR)
-            
-        return frame
-        
-    def get_face_roi(self, frame, face_box):
-        """Get region of interest around face"""
-        if face_box is None:
-            return None
-            
-        x, y, w, h = face_box
-        margin = self.roi_margin
-        
-        # Add margin around face
-        x1 = max(0, x - margin)
-        y1 = max(0, y - margin)
-        x2 = min(frame.shape[1], x + w + margin)
-        y2 = min(frame.shape[0], y + h + margin)
-        
-        return (x1, y1, x2-x1, y2-y1)
+            cl = self._clahe.apply(l)
+            frame = cv2.cvtColor(cv2.merge((cl, a, b)), cv2.COLOR_LAB2BGR)
 
-    def run(self):
-        """Run the frame processor (if needed for standalone operation)"""
-        logger.info("Frame processor running...")
-        # Implementation would depend on specific requirements
-        pass 
+        return frame

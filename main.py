@@ -25,6 +25,7 @@ from typing import Dict, Any, Optional
 from frame_processor import OptimizedFrameProcessor
 from event_logger import log_event
 from config_loader import load_config, DEFAULT_CONFIG_PATH
+from database_integration import db_bp, attach_database
 # ImprovedFaceAnalyzer is imported by frame_processor
 
 # Configure logging
@@ -53,6 +54,41 @@ CORS(app, resources={
 
 # Add response compression
 Compress(app)
+
+# Register the MySQL-backed mobile/dashboard endpoints (/api/db/*). The blueprint is always
+# registered; it returns 503 until attach_database() wires in a live DatabaseManager.
+app.register_blueprint(db_bp)
+
+# Optional MySQL persistence — initialized in initialize_system() only if
+# integration.database.enabled is true. Left as None means "file logging only".
+db_manager = None
+db_session_id = None
+
+
+def _db_behavior_rows(result):
+    """Map a process_frame() result into one flat behavior dict per ACTIVE behavior,
+    shaped for db_manager.log_behavior() (one row per active behavior)."""
+    bc = result.get('behavior_category', {})
+    metrics = result.get('metrics', {})
+    head_pose = metrics.get('head_pose') or [0.0, 0.0, 0.0]
+    hp = {
+        'yaw': head_pose[0] if len(head_pose) > 0 else 0.0,
+        'pitch': head_pose[1] if len(head_pose) > 1 else 0.0,
+        'roll': head_pose[2] if len(head_pose) > 2 else 0.0,
+    }
+    rows = []
+    for name, key in (('drowsy', 'is_drowsy'), ('yawning', 'is_yawning'), ('distracted', 'is_distracted')):
+        if bc.get(key):
+            rows.append({
+                'behavior': name,
+                'confidence': result.get('behavior_confidence', 0.0),
+                'is_risky': True,
+                'ear': metrics.get('ear'),
+                'mar': metrics.get('mar'),
+                'head_pose': hp,
+                'additional_metrics': {'behavior_category': bc},
+            })
+    return rows
 
 @app.before_request
 def log_request_info():
@@ -108,8 +144,8 @@ def base64_to_cv2(base64_string):
 
 def initialize_system(config_path=DEFAULT_CONFIG_PATH):
     """Initialize the driver monitoring system"""
-    global frame_processor, config, log_dir, session_id
-    
+    global frame_processor, config, log_dir, session_id, db_manager, db_session_id
+
     try:
         # Load configuration
         config = load_config(config_path)
@@ -130,7 +166,31 @@ def initialize_system(config_path=DEFAULT_CONFIG_PATH):
         
         # Initialize frame processor
         frame_processor = OptimizedFrameProcessor(config)
-        
+
+        # Optional MySQL persistence (dual-write alongside the JSON logs).
+        # Off unless integration.database.enabled is true; a DB failure must NOT
+        # take down the server, so it falls back to file-only logging.
+        db_manager = None
+        db_session_id = None
+        db_cfg = config.get("integration", {}).get("database", {})
+        if db_cfg.get("enabled"):
+            try:
+                from utils.db_manager import DatabaseManager
+                db_manager = DatabaseManager(config)
+                db_session_id = db_manager.create_monitoring_session(
+                    device_info={"source": "eyedtrack-api"}
+                )
+                logger.info(f"✅ MySQL persistence enabled (db session {db_session_id})")
+            except Exception as db_err:
+                logger.error(f"⚠️ MySQL persistence disabled — DatabaseManager init failed: {db_err}")
+                db_manager = None
+                db_session_id = None
+        else:
+            logger.info("MySQL persistence disabled (integration.database.enabled is false)")
+
+        # Share the manager + session with the /api/db/* blueprint (None => endpoints return 503).
+        attach_database(db_manager, db_session_id)
+
         logger.info(f"Driver monitoring system initialized. Using log directory: {log_dir}")
         return config
         
@@ -473,7 +533,16 @@ def process_frame():
             }
             event_type = "risky_behavior"
             log_event(log_dir, event_type, event_data)
-            
+
+            # Dual-write: persist each active behavior to MySQL (one row per behavior),
+            # only when enabled. Never let a DB error break frame processing.
+            if db_manager is not None and db_session_id is not None:
+                try:
+                    for row in _db_behavior_rows(result):
+                        db_manager.log_behavior(db_session_id, row)
+                except Exception as db_err:
+                    logger.error(f"MySQL log_behavior failed: {db_err}")
+
         # Format response for frontend - FIX: Extract metrics correctly
         metrics = result.get('metrics', {})
         response = {

@@ -55,6 +55,14 @@ DEFAULT_CONFIG = {
         "pitch_threshold": 20,
         "roll_threshold": 15
     },
+    "detection": {
+        "use_improved_dlib": True,
+        "use_standalone_analyzer": True,
+        "ear_threshold": 0.25,
+        "mar_threshold": 0.6,
+        "yaw_threshold": 35,
+        "pitch_threshold": 25
+    },
     "behavior": {
         "model_dir": "driver_behavior_model",
         "only_alert_on_risk": True,
@@ -98,15 +106,31 @@ DEFAULT_CONFIG = {
     },
     "integration": {
         "api": {
-            "enabled": False,
-            "base_url": "http://localhost:8000/api/",
-            "api_key": ""
+            "enabled": True,
+            "host": "0.0.0.0",
+            "port": 5000,
+            "base_url": "http://localhost:5000/api/",
+            "api_key": "",
+            "cors_origins": ["*"]
         },
         "mqtt": {
             "enabled": False,
             "broker": "localhost",
             "port": 1883,
             "topic": "driver_monitoring"
+        },
+        "database": {
+            "enabled": False,
+            "type": "mysql",
+            "host": "localhost",
+            "port": 3306,
+            "database": "eyedtrack_db",
+            "username": "root",
+            "password": "",
+            "pool_size": 5,
+            "max_overflow": 10,
+            "pool_timeout": 30,
+            "pool_recycle": 3600
         }
     },
     "gui": {
@@ -137,102 +161,59 @@ def update_config(base_config, update_dict):
             base_config[key] = value
 
 def load_config(config_path=None):
-    """Load configuration from YAML file"""
+    """Load configuration: start from DEFAULT_CONFIG and deep-merge YAML overrides on top.
+
+    Single source of truth is the module-level DEFAULT_CONFIG. The YAML file only needs to
+    specify the keys it wants to override; everything else falls back to the defaults.
+    """
+    config = copy.deepcopy(DEFAULT_CONFIG)
     try:
-        # Load default configuration
-        default_config = {
-            "camera": {
-                "device_id": 0,
-                "width": 640,
-                "height": 480,
-                "fps": 30
-            },
-            "face_detection": {
-                "use_cnn": False,
-                "use_media_pipe": True,
-                "use_media_pipe_mesh": True,
-                "min_face_size": [50, 50],
-                "scale_factor": 1.05,
-                "min_neighbors": 5
-            },
-            "thresholds": {
-                "ear_lower": 0.15,
-                "ear_upper": 0.30,
-                "mar_lower": 0.4,
-                "mar_upper": 0.9,
-                "drowsy_frames": 10,
-                "yawn_frames": 8,
-                "distraction_frames": 12,
-                "yaw_threshold": 30,
-                "pitch_threshold": 20,
-                "roll_threshold": 15
-            },
-            "performance": {
-                "skip_frames": 0,
-                "max_queue_size": 2,
-                "resize_factor": 1.0,
-                "use_threading": True,
-                "max_workers": 2,
-                "enable_gpu": False,
-                "camera_buffer_size": 1,
-                "batch_size": 1,
-                "profile_performance": False,
-                "track_memory": False
-            },
-            "logging": {
-                "level": "INFO",
-                "log_dir": "driver_monitoring_logs",
-                "log_data": True,
-                "log_events": True
-            },
-            "integration": {
-                "api": {
-                    "enabled": True,
-                    "host": "0.0.0.0",
-                    "port": 5000,
-                    "base_url": "http://localhost:5000/api/",
-                    "cors_origins": ["*"]
-                }
-            }
-        }
-
+        # Pick the config file: explicit path first, then ./config.yaml.
+        path = None
         if config_path and os.path.exists(config_path):
-            with open(config_path, 'r') as f:
-                yaml_config = yaml.safe_load(f)
-                if yaml_config:
-                    update_config(default_config, yaml_config)
-                    logger.info(f"Configuration loaded from {config_path}")
+            path = config_path
         elif os.path.exists('config.yaml'):
-            # Try to load from config.yaml in current directory
-            with open('config.yaml', 'r') as f:
+            path = 'config.yaml'
+
+        if path:
+            with open(path, 'r') as f:
                 yaml_config = yaml.safe_load(f)
-                if yaml_config:
-                    update_config(default_config, yaml_config)
-                    logger.info("Configuration loaded from config.yaml")
+            if yaml_config:
+                update_config(config, yaml_config)
+                logger.info(f"Configuration loaded from {path}")
         else:
-            logger.warning("Using default configuration")
+            logger.warning("No config file found; using default configuration")
 
-        # Legacy thresholds (maintain backwards compatibility)
-        default_config["thresholds"] = {
-            "drowsy_frames": default_config["thresholds"].get("drowsy_frames", 8),
-            "yawn_frames": default_config["thresholds"].get("yawn_frames", 3), 
-            "distraction_frames": default_config["thresholds"].get("distraction_frames", 6)
+        # Backfill the detection frame-count thresholds from the `thresholds` section
+        # when not explicitly set, so both naming schemes resolve (non-destructive).
+        detection = config.setdefault("detection", {})
+        thresholds = config.get("thresholds", {})
+        detection.setdefault("drowsy_frames_threshold", thresholds.get("drowsy_frames", 8))
+        detection.setdefault("yawn_frames_threshold", thresholds.get("yawn_frames", 3))
+        detection.setdefault("distraction_frames_threshold", thresholds.get("distraction_frames", 6))
+
+        # Environment-variable overrides for the database connection. Lets the secret
+        # (the password especially) stay OUT of the tracked config.yaml: any EYEDTRACK_DB_*
+        # var that is set wins over the file value.
+        database = config.setdefault("integration", {}).setdefault("database", {})
+        db_env_overrides = {
+            "EYEDTRACK_DB_HOST": "host",
+            "EYEDTRACK_DB_PORT": "port",
+            "EYEDTRACK_DB_NAME": "database",
+            "EYEDTRACK_DB_USER": "username",
+            "EYEDTRACK_DB_PASSWORD": "password",
         }
-        
-        # Merge detection config with thresholds for backwards compatibility
-        if "detection" in default_config:
-            # Use detection section frame thresholds if available, otherwise use thresholds section
-            detection = default_config["detection"]
-            detection["drowsy_frames_threshold"] = detection.get("drowsy_frames_threshold", default_config["thresholds"]["drowsy_frames"])
-            detection["yawn_frames_threshold"] = detection.get("yawn_frames_threshold", default_config["thresholds"]["yawn_frames"])
-            detection["distraction_frames_threshold"] = detection.get("distraction_frames_threshold", default_config["thresholds"]["distraction_frames"])
+        for env_key, cfg_key in db_env_overrides.items():
+            env_val = os.environ.get(env_key)
+            if env_val not in (None, ""):
+                database[cfg_key] = int(env_val) if cfg_key == "port" else env_val
 
-        return default_config
+        return config
 
     except Exception as e:
         logger.error(f"Error loading configuration: {str(e)}")
         logger.warning("Using default configuration")
-        return DEFAULT_CONFIG
+        return copy.deepcopy(DEFAULT_CONFIG)
 
 def validate_config(config: Dict[str, Any]) -> None:
     """

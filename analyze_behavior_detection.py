@@ -15,8 +15,6 @@ from collections import defaultdict, deque
 
 from config_loader import ConfigLoader
 from frame_processor import OptimizedFrameProcessor
-from face_analysis import eye_aspect_ratio, mouth_aspect_ratio
-from face_analysis.face_detection import FaceDetector
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -30,12 +28,9 @@ class BehaviorDetectionAnalyzer:
         self.config_loader = ConfigLoader(config_path)
         self.config = self.config_loader.get_config()
         
-        # Initialize frame processor
+        # Initialize frame processor (the canonical detection path)
         self.frame_processor = OptimizedFrameProcessor(self.config)
-        
-        # Initialize face detector for standalone testing
-        self.face_detector = FaceDetector(self.config)
-        
+
         # Detection thresholds from config
         detection_config = self.config.get("detection", self.config.get("thresholds", {}))
         self.ear_threshold = detection_config.get("ear_threshold", 0.25)

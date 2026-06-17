@@ -72,12 +72,13 @@ integration:
     port: 1883
     topic: "driver_monitoring"
   database:
+    enabled: true    # dual-write behaviors to MySQL alongside the JSON logs
     type: "mysql"
     host: "localhost"
     port: 3306
     database: "eyedtrack_db"
-    username: "root"
-    password: ""
+    username: "eyedtrack_app"
+    password: ""     # leave blank — set the real password via the EYEDTRACK_DB_PASSWORD env var
     pool_size: 5
     max_overflow: 10
     pool_timeout: 30
