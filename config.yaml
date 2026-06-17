@@ -1,0 +1,126 @@
+# config.yaml
+camera:
+  device_id: 0
+  width: 640
+  height: 480
+  fps: 30
+
+face_detection:
+  use_cnn: false
+  use_media_pipe: true
+  use_media_pipe_mesh: true
+  min_face_size: [40, 40]
+  scale_factor: 1.1
+  min_neighbors: 3
+  enable_tracking: true
+  tracking_quality: 0.25
+  max_tracking_failures: 15
+
+clahe:
+  enabled: true
+  clip_limit: 2.5
+  base_tile_grid_size: [8, 8]
+  do_gamma: false
+  do_homomorphic: false
+  homomorphic_sigma: 30.0
+  homomorphic_low_gain: 0.7
+  homomorphic_high_gain: 1.5
+
+# Legacy thresholds section removed - now using detection section below
+
+logging:
+  level: "DEBUG"
+  log_dir: "driver_monitoring_logs"
+  log_data: true
+  log_events: true
+
+display:
+  show_fps: true
+  only_show_status_on_risk: true
+  show_landmarks: false
+  show_head_pose: false
+  show_alerts: true
+  show_status_panel: true
+  alert_duration: 3.0
+
+performance:
+  skip_frames: 1
+  max_queue_size: 2
+  resize_factor: 0.75
+  use_threading: true
+  max_workers: 4
+  enable_gpu: false
+  camera_buffer_size: 1
+  batch_size: 1
+  profile_performance: false
+  track_memory: false
+  use_roi: true
+  roi_margin: 75
+
+integration:
+  api:
+    enabled: true
+    host: "0.0.0.0"
+    port: 5000
+    base_url: "192.168.68.106"
+    api_key: ""
+    cors_origins: ["*"]
+    allowed_hosts: ["localhost", "127.0.0.1", "10.0.2.2", "0.0.0.0", "*", "172.16.112.81", "192.168.68.106"]
+  mqtt:
+    enabled: false
+    broker: "localhost"
+    port: 1883
+    topic: "driver_monitoring"
+  database:
+    type: "mysql"
+    host: "localhost"
+    port: 3306
+    database: "eyedtrack_db"
+    username: "root"
+    password: ""
+    pool_size: 5
+    max_overflow: 10
+    pool_timeout: 30
+    pool_recycle: 3600
+
+gui:
+  enabled: false
+
+head_pose:
+  use_kalman_filter: true
+  stabilization_window: 5
+  confidence_threshold: 0.4
+  angle_smoothing: true
+  max_angle_change: 20.0
+  smoothing_alpha: 0.3
+
+robustness:
+  lighting_adaptation: true
+  error_recovery: true
+  fallback_modes: true
+  automatic_recalibration: true
+  max_recovery_attempts: 3
+
+# Frame-based thresholds for consistent behavior detection
+thresholds:
+  # Number of consecutive frames required before triggering behavior  
+  drowsy_frames: 6     # ~0.2s at 30fps (reduced for faster response)
+  yawn_frames: 2       # ~0.07s at 30fps (REDUCED - yawns are very brief!)
+  distraction_frames: 5 # ~0.17s at 30fps (reduced for faster response)
+
+detection:
+  # Enable improved dlib-based detection (more accurate)
+  use_improved_dlib: true
+  
+  # Use standalone ImprovedFaceAnalyzer (pure dlib, no MediaPipe fallback)
+  use_standalone_analyzer: true   # Set to true to use improved_detection.py
+  
+  # Eye aspect ratio threshold for drowsiness detection (matching reference code)
+  ear_threshold: 0.25  # FIXED: Matching reference code exactly
+  
+  # Mouth aspect ratio threshold for yawning detection (MORE SENSITIVE)
+  mar_threshold: 0.6   # CHANGED: Lowered from 0.7 to 0.6 for more sensitive yawning detection
+  
+  # Head pose thresholds for distraction detection (LESS SENSITIVE)
+  yaw_threshold: 35    # INCREASED: Was 25, now 35 degrees (less sensitive)
+  pitch_threshold: 25  # INCREASED: Was 15, now 25 degrees (less sensitive)

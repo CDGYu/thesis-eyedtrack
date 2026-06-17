@@ -1,0 +1,11 @@
+flask==3.0.0
+flask-cors==4.0.0
+numpy>=1.19.5
+opencv-python>=4.5.3
+dlib>=19.22.0
+mediapipe>=0.8.9
+pyyaml==6.0.1
+pillow>=8.3.2
+python-dotenv==1.0.0
+gunicorn==21.2.0
+scipy>=1.7.1 

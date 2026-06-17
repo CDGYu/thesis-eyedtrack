@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F2F2F2"
+    tools:context=".DebugPreferencesActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="SharedPreferences Debug Tool"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:textColor="#060644"
+            android:layout_marginBottom="16dp"/>
+
+        <TextView
+            android:id="@+id/debug_prefs_info"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:background="#E8E8E8"
+            android:textColor="#333333"
+            android:layout_marginBottom="16dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <Button
+                android:id="@+id/btn_show_prefs"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Show Preferences"
+                android:backgroundTint="#060644"
+                android:layout_marginEnd="8dp"/>
+
+            <Button
+                android:id="@+id/btn_clear_prefs"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Clear Preferences"
+                android:backgroundTint="#FF5733"
+                android:layout_marginStart="8dp"/>
+        </LinearLayout>
+        
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="User Management"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#060644"
+            android:layout_marginBottom="8dp"/>
+            
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp">
+
+            <Button
+                android:id="@+id/btn_show_users"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Show Users"
+                android:backgroundTint="#060644"
+                android:layout_marginEnd="8dp"/>
+
+            <Button
+                android:id="@+id/btn_terminal_help"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Terminal Help"
+                android:backgroundTint="#4CAF50"
+                android:layout_marginStart="8dp"/>
+        </LinearLayout>
+        
+        <Button
+            android:id="@+id/btn_manage_users"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Manage Individual Users"
+            android:backgroundTint="#2196F3"
+            android:layout_marginBottom="16dp"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#CCCCCC"
+            android:layout_marginBottom="16dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Terminal Commands"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#060644"
+            android:layout_marginBottom="8dp"/>
+            
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#E8E8E8"
+            android:padding="8dp"
+            android:text="View all user data via terminal:\nadb logcat -s EYEDTRACK_USERS"
+            android:textColor="#333333"
+            android:textIsSelectable="true"
+            android:layout_marginBottom="16dp"/>
+
+        <TextView
+            android:id="@+id/prefs_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:textColor="#333333"
+            android:background="#E8E8E8"
+            android:minHeight="200dp"/>
+
+    </LinearLayout>
+</ScrollView> 

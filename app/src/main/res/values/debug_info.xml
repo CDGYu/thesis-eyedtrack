@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Debug information for developers -->
+    <string name="debug_prefs_info">SharedPreferences Location:\n/data/data/com.example.eyedtrack/shared_prefs/AppPreferences.xml</string>
+    <string name="debug_prefs_adb_command">adb shell "run-as com.example.eyedtrack cat /data/data/com.example.eyedtrack/shared_prefs/AppPreferences.xml"</string>
+    
+    <!-- Terminal commands to view preferences -->
+    <string-array name="debug_prefs_commands">
+        <item>adb shell</item>
+        <item>run-as com.example.eyedtrack</item>
+        <item>cd /data/data/com.example.eyedtrack/shared_prefs</item>
+        <item>cat AppPreferences.xml</item>
+    </string-array>
+</resources> 

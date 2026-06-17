@@ -1,0 +1,138 @@
+<resources>
+    <string name="logo_title">EyeDTrack</string>
+    <string name="logo_description">Keeping You Focused, Keeping You Safe.</string>
+    <string name="live_feed">Live Feed</string>
+    <string name="alert_history">Alert History</string>
+    <string name="profile">Profile</string>
+    <string name="settings">Settings</string>
+    <string name="home">Home</string>
+    <string name="driver_tracking">Driver Tracking</string>
+    <string name="camera_status_view">Camera Disconnected.</string>
+    <string name="monitoring_inactive">Monitoring Inactive</string>
+    <string name="title_activity_live_feed">live_feed</string>
+    <string name="getting_start_info">Follow these simple steps to set up and use the EyeDTrack system for real-time driver attention monitoring.</string>
+    <string name="getting_started_with_eyedtrack">Getting Started with EyeDTrack</string>
+    <string name="install_setup"><![CDATA[Installation & Setup]]></string>
+    <string name="installation_setup_mount">Mount the Camera</string>
+    <string name="installation_setup_power">Power On the Device</string>
+    <string name="installation_setup_connect">Connect to the App</string>
+    <string name="installation_setup_start">Start Driving</string>
+    <string name="installation_setup_real">Real-Time Monitoring</string>
+    <string name="installation_setup_alert"><![CDATA[Alerts & Notication]]></string>
+    <string name="about_us">About us</string>
+    <string name="name">JUAN DELA CRUZ</string>
+    <string name="question_1">What is EyeDTrack?</string>
+    <string name="answer_1">EyeDTrack is a real-time driver attention monitoring system that detects inattention using motion detection.</string>
+    <string name="question_2">How does EyeDTrack detect driver inattention?</string>
+    <string name="answer_2">It analyzes visual and behavioral data to identify distractions like phone use, drowsiness, or looking away from the road.</string>
+    <string name="question_3">How does the alert system work?</string>
+    <string name="answer_3">It sends real-time visual and audio alerts when signs of distraction or drowsiness are detected.</string>
+    <string name="question_4">Is EyeDTrack compatible with all vehicles?</string>
+    <string name="answer_4">Yes, it is designed to be cost-effective and adaptable for various vehicle types.</string>
+    <string name="question_5">How accurate is EyeDTrack in detecting drowsiness or distraction?</string>
+    <string name="answer_5">The system is trained using machine learning to ensure high accuracy and minimal false alerts.</string>
+    <string name="question_6">How does EyeDTrack improve road safety?</string>
+    <string name="answer_6">It detects inattention early, preventing accidents and promoting safer driving habits.</string>
+    <string name="terms_and_conditions">Terms and Conditions \n \nEffective Date: March 17, 2025\n\n 1. Introduction\n Keeping You Focused, Keeping You Safe.\n Welcome to EyeDTrack (Company, we, our, us). By accessing our mobile application EyeDTrack and using our services, you agree to comply with these Terms and Conditions. If you do not agree, please do not use our services.\n\n 2. Use of Services\n - Users under the age of 18 may use our services. Users under the age of 13 may also use our services.\n - You agree to use our services legally and not for any fraudulent or harmful purposes.\n - We reserve the right to suspend or terminate your access if you violate these terms.\n\n 3. Intellectual Property\n - All content on our mobile application, including text, graphics, logos, and software, is owned by us or our licensors and is protected by copyright laws.\n - You may not copy, distribute, or use our content without our written permission.\n\n 4. User Responsibilities\n - Users can create an account on our platform.\n - Users cannot link their accounts to their social media accounts.\n - Users cannot upload or post content on our platform.\n - Users can submit reviews of the products on our platform.\n - You are responsible for maintaining the confidentiality of your account and password.\n - You agree to provide accurate and up-to-date information when using our services.\n - Any misuse or unauthorized access of our services may lead to legal action.\n\n 5. Limitation of Liability\n - We do not display third-party advertisements on our platform.\n - We are not responsible for any damages, losses, or liabilities arising from the use of our services.\n - Our services are provided \'as is\' without warranties of any kind.\n - Our total liability for any claims arising from the use of our platform shall be limited to the lesser of either PHP 500 or the total amount paid by the user to the Company for services rendered.\n\n 6. Privacy Policy\n - Your use of our services is also governed by our Privacy Policy, which details how we collect, use, and protect your data.\n\n 7. Contact Information\n If you have any questions regarding these Terms and Conditions, please contact us at:\n - Company Name: EyeDTrack\n - Email: eyedtrack@gmail.com\n - Phone: +63 960-368-7067\n - Business Location: EyeDTrack is a software-based entity operating in the Philippines without a physical business address.</string>
+    <string name="eula_content"><![CDATA[
+End-User License Agreement (EULA)
+
+\n\nEffective Date: April 25, 2025
+\nLast Updated: April 25, 2025
+
+\n\n  This End-User License Agreement ("Agreement") is a legal agreement between you ("User", "you", or "your") and EyeDTrack ("we", "our", or "the Company") for the use of the EyeDTrack mobile application ("Application").
+
+\n\n  By downloading, installing, or using the Application, you agree to be bound by the terms of this Agreement. If you do not agree to these terms, do not use the Application.
+
+\n\n1. License Grant
+\nWe grant you a limited, non-exclusive, non-transferable, revocable license to install and use the Application solely for personal, non-commercial purposes in accordance with this Agreement.
+
+\n\n2. Restrictions
+\nYou agree not to:
+\n   - Modify, reverse engineer, decompile, or disassemble the Application.
+\n   - Reproduce, distribute, or resell the Application or any part thereof.
+\n   - Use the Application for any unlawful or unauthorized purposes.
+\n   - Bypass or breach any security or authentication measures.
+
+\n\n3. Intellectual Property
+\nAll intellectual property rights in and to the Application are owned by or licensed to EyeDTrack. This Agreement does not grant you any rights to our trademarks or other intellectual property.
+
+\n\n4. Privacy and Data Usage
+\nBy using the Application, you consent to the collection and use of your data as described in our Privacy Policy.
+
+\n\n5. Disclaimers
+\n  - The Application is provided "as is" and "as available" without warranty of any kind.
+\n  - We do not guarantee that the Application will detect all forms of distraction or prevent accidents.
+\n  - The Application is not a replacement for responsible driving behavior.
+
+\n\n6. Limitation of Liability
+\nEyeDTrack shall not be liable for any indirect, incidental, or consequential damages.
+
+\n\n7. Termination
+\nThis Agreement is effective until terminated. Your rights under this Agreement will terminate automatically if you breach any part of it.
+
+\n\n8. Amendments
+\nWe reserve the right to modify this Agreement at any time.
+
+\n\n9. Governing Law
+\nThis Agreement shall be governed by and construed in accordance with the laws of Philippines.
+
+\n\n10. Contact Information
+\nEmail: eyedtrack@gmail.com
+\nNumber: +639603687067
+]]></string>
+
+    <string name="dpa_content"><![CDATA[
+Data Processing Agreement (DPA)
+
+\n\nEffective Date: April 26, 2025
+\nLast Updated: April 26, 2025
+
+\n\nThis Data Processing Agreement ("Agreement") outlines how EyeDTrack ("we", "our", or "the Company") collects, processes, stores, and protects personal data collected through the EyeDTrack mobile application ("Application").
+
+\n\n1. Data Collection
+\nWe collect limited personal and behavioral data necessary for the operation of the Application, including:
+\n   - Visual data from the camera for real-time driver attention monitoring.
+\n   - Usage statistics for improving system performance.
+\n   - Device information and connection status.
+
+\n\n2. Purpose of Processing
+\nData collected is used exclusively to:
+\n   - Monitor driver attention and detect distractions.
+\n   - Provide real-time alerts for safety purposes.
+\n   - Improve and optimize the Application.
+
+\n\n3. Data Storage and Security
+\nAll collected data is securely transmitted to our cloud servers.
+\nWe implement technical and organizational measures to protect data against unauthorized access, alteration, disclosure, or destruction.
+
+\n\n4. Data Retention
+\nPersonal and behavioral data is retained only as long as necessary to fulfill the monitoring service or as required by law.
+\nUsers may request deletion of their data at any time by contacting us.
+
+\n\n5. User Rights
+\nYou have the right to:
+\n   - Access the personal data we hold about you.
+\n   - Request correction or deletion of your data.
+\n   - Object to or restrict certain types of processing.
+
+\n\n6. Third-Party Sharing
+\nWe do not sell, rent, or share your personal data with third parties, except:
+\n   - When required by law.
+\n   - To cloud service providers solely for processing under our instructions.
+
+\n\n7. International Transfers
+\nIf data is transferred internationally, we ensure appropriate safeguards are in place to protect your information.
+
+\n\n8. Changes to this Agreement
+\nWe may update this Data Processing Agreement from time to time. Any changes will be posted in the Application.
+
+\n\n9. Contact Information
+\nFor any questions or requests related to this Agreement, please contact us at:
+\n   - Email: eyedtrack@gmail.com
+\n   - Phone: +63 960-368-7067
+
+]]></string>
+
+
+</resources>

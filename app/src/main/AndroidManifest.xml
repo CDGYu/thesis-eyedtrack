@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Network permissions -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+
+    <!-- Storage permissions -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
+
+    <!-- Camera permissions -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="true" />
+
+    <!-- TextToSpeech permission -->
+    <uses-feature android:name="android.hardware.audio.output" android:required="true" />
+
+    <!-- Screen support -->
+    <supports-screens
+        android:anyDensity="true"
+        android:largeScreens="true"
+        android:normalScreens="true"
+        android:resizeable="true"
+        android:smallScreens="true" />
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="EyeDTrack"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.EyeDTrack"
+        android:usesCleartextTraffic="true"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:requestLegacyExternalStorage="true"
+        tools:ignore="ExtraText,ObsoleteSdkInt"
+        tools:targetApi="31">
+
+        <!-- Launches the app with a loading screen -->
+        <activity
+            android:name=".LoadingScreenActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Activity for user login -->
+        <activity android:name=".LoginActivity" android:exported="false" />
+
+        <!-- Activity for user sign up -->
+        <activity android:name=".SignUpActivity" android:exported="false" />
+
+        <!-- First help screen activity -->
+        <activity android:name=".HelpActivity" android:exported="false"/>
+
+
+        <!-- Activity for configuring sound alerts -->
+        <activity android:name=".SoundsActivity" android:exported="false" />
+
+        <!-- Activity displaying frequently asked questions -->
+        <activity android:name=".FAQsActivity" android:exported="false" />
+
+        <!-- Activity displaying app information and developers -->
+        <activity android:name=".AboutUsActivity" android:exported="false" />
+
+        <!-- Activity explaining data privacy policies -->
+        <activity android:name=".DataPrivacyActivity" android:exported="false" />
+
+        <!-- Activity for viewing alert history logs -->
+        <activity android:name=".AlertHistoryActivity" android:exported="false" />
+
+        <!-- Activity for modifying app settings -->
+        <activity android:name=".SettingsActivity" android:exported="false" />
+
+        <!-- Activity for user profile information -->
+        <activity android:name=".ProfileActivity" android:exported="false" />
+
+        <!-- Main user dashboard after login -->
+        <activity android:name=".HomePageActivity" android:exported="false" />
+
+        <!-- Live camera feed activity for monitoring -->
+        <activity android:name=".LiveFeedActivity" android:exported="false" />
+
+        <!-- Terms and Conditions display activity -->
+        <activity android:name=".TermsAndConditionsActivity" android:exported="false" />
+
+        <!-- End User License Agreement display activity -->
+        <activity android:name=".EulaActivity" android:exported="false"/>
+
+        <!-- Data Privacy Agreement display activity -->
+        <activity android:name=".DPAActivity" android:exported="false"/>
+
+        <!-- Debug activity for viewing SharedPreferences data -->
+        <activity android:name=".DebugPreferencesActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="eyedtrack" android:host="preferences" />
+            </intent-filter>
+        </activity>
+
+        <!-- Activity for managing user accounts -->
+        <activity android:name=".UserManagementActivity" android:exported="false" />
+
+        <!-- Preload custom fonts for UI design -->
+        <meta-data
+            android:name="preloaded_fonts"
+            android:resource="@array/preloaded_fonts" />
+    </application>
+
+</manifest>
