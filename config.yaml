@@ -117,7 +117,8 @@ detection:
   use_standalone_analyzer: true   # Set to true to use improved_detection.py
   
   # Eye aspect ratio threshold for drowsiness detection (matching reference code)
-  ear_threshold: 0.25  # FIXED: Matching reference code exactly
+  ear_threshold: 0.27  # raised from 0.25 for more sensitive drowsiness detection
+                       # (relies on drowsy_frames=6 consecutive frames to avoid false positives)
   
   # Mouth aspect ratio threshold for yawning detection (MORE SENSITIVE)
   mar_threshold: 0.6   # CHANGED: Lowered from 0.7 to 0.6 for more sensitive yawning detection
