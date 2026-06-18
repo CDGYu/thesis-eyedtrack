@@ -17,7 +17,6 @@ object PreferenceManager {
     private const val KEY_LAST_NAME = "lastName"
     private const val KEY_EMAIL = "email"
     private const val KEY_MOBILE = "mobile"
-    private const val KEY_BIRTHDAY = "birthday"
     private const val KEY_PASSWORD = "password"
     private const val KEY_LOGGED_IN = "isLoggedIn"
     private const val KEY_USERS_LIST = "usersList"
@@ -67,25 +66,23 @@ object PreferenceManager {
         lastName: String,
         email: String,
         mobile: String,
-        birthday: String,
         password: String
     ) {
         // Hash the password before storing
         val hashedPassword = hashPassword(password)
-        
+
         // Save current user data
         getPreferences(context).edit().apply {
             putString(KEY_FIRST_NAME, firstName)
             putString(KEY_LAST_NAME, lastName)
             putString(KEY_EMAIL, email)
             putString(KEY_MOBILE, mobile)
-            putString(KEY_BIRTHDAY, birthday)
             putString(KEY_PASSWORD, hashedPassword)
             apply()
         }
-        
+
         // Also add to users list
-        addUserToList(context, firstName, lastName, email, mobile, birthday)
+        addUserToList(context, firstName, lastName, email, mobile)
     }
     
     // Add a user to the user list
@@ -94,8 +91,7 @@ object PreferenceManager {
         firstName: String,
         lastName: String,
         email: String,
-        mobile: String,
-        birthday: String
+        mobile: String
     ) {
         val prefs = getPreferences(context)
         val usersListString = prefs.getString(KEY_USERS_LIST, "[]")
@@ -109,7 +105,6 @@ object PreferenceManager {
                 put("lastName", lastName)
                 put("email", email)
                 put("mobile", mobile)
-                put("birthday", birthday)
                 put("timestamp", System.currentTimeMillis())
             }
             
@@ -142,7 +137,6 @@ object PreferenceManager {
                 userMap["lastName"] = userObject.getString("lastName")
                 userMap["email"] = userObject.getString("email")
                 userMap["mobile"] = userObject.getString("mobile")
-                userMap["birthday"] = userObject.getString("birthday")
                 
                 usersList.add(userMap)
             }
@@ -188,7 +182,6 @@ object PreferenceManager {
                         .remove(KEY_LAST_NAME)
                         .remove(KEY_EMAIL)
                         .remove(KEY_MOBILE)
-                        .remove(KEY_BIRTHDAY)
                         .remove(KEY_PASSWORD)
                         .remove(KEY_LOGGED_IN)
                         .apply()
@@ -231,8 +224,7 @@ object PreferenceManager {
             "firstName" to prefs.getString(KEY_FIRST_NAME, ""),
             "lastName" to prefs.getString(KEY_LAST_NAME, ""),
             "email" to prefs.getString(KEY_EMAIL, ""),
-            "mobile" to prefs.getString(KEY_MOBILE, ""),
-            "birthday" to prefs.getString(KEY_BIRTHDAY, "")
+            "mobile" to prefs.getString(KEY_MOBILE, "")
         )
     }
     

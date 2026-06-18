@@ -148,47 +148,6 @@
                     android:layout_marginTop="20dp"
                     android:background="#8A8A8A" />
 
-                <!-- Input fields for day, month, and year of birth -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
-                    android:orientation="horizontal">
-
-                    <!-- Label for birthday -->
-                    <TextView
-                        android:id="@+id/birthday_label"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Birthday"
-                        android:textColor="#060644"
-                        android:textSize="16sp" />
-
-                    <EditText
-                        android:id="@+id/editTextBirthday"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="@android:color/transparent"
-                        android:clickable="true"
-                        android:focusable="false"
-                        android:gravity="end"
-                        android:hint="Select Birthday"
-                        android:autofillHints="Birthday"
-                        android:inputType="none"
-                        android:minWidth="140dp"
-                        android:padding="4dp"
-                        android:textColor="#8A8A8A"
-                        android:textSize="16sp" />
-                </LinearLayout>
-
-                <View
-                    android:id="@+id/horizontal_line4"
-                    android:layout_width="match_parent"
-                    android:layout_height="0.5dp"
-                    android:layout_marginTop="20dp"
-                    android:background="#8A8A8A" />
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

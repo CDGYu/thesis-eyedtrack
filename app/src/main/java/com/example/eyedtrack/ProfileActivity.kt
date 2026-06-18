@@ -58,19 +58,16 @@ class ProfileActivity : AppCompatActivity() {
         val fullNameTextView = findViewById<TextView>(R.id.fullname)
         val emailTextView = findViewById<TextView>(R.id.email)
         val mobileTextView = findViewById<TextView>(R.id.phone_number)
-        val birthdayTextView = findViewById<TextView>(R.id.editTextBirthday)
-        
+
         // Set data to fields
         fullNameTextView.text = fullName
         emailTextView.text = userData["email"]
         mobileTextView.text = userData["mobile"]
-        birthdayTextView.text = userData["birthday"]
-        
+
         // Make sure fields are not editable
         fullNameTextView.isEnabled = false
         emailTextView.isEnabled = false
         mobileTextView.isEnabled = false
-        birthdayTextView.isEnabled = false
 
         // Initialize buttons.
         val btnGoToSettings = findViewById<ImageButton>(R.id.settings_icon)

@@ -81,7 +81,6 @@ object PreferencesDebugger {
                 Log.i(USERS_TAG, "Name: ${user["firstName"]} ${user["lastName"]}")
                 Log.i(USERS_TAG, "Email: ${user["email"]}")
                 Log.i(USERS_TAG, "Mobile: ${user["mobile"]}")
-                Log.i(USERS_TAG, "Birthday: ${user["birthday"]}")
                 Log.i(USERS_TAG, "-------------------------------")
             }
         }
@@ -105,8 +104,7 @@ object PreferencesDebugger {
                 message.append("User #${index + 1}:\n")
                 message.append("Name: ${user["firstName"]} ${user["lastName"]}\n")
                 message.append("Email: ${user["email"]}\n")
-                message.append("Mobile: ${user["mobile"]}\n")
-                message.append("Birthday: ${user["birthday"]}\n\n")
+                message.append("Mobile: ${user["mobile"]}\n\n")
             }
         }
         
