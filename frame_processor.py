@@ -15,7 +15,6 @@ from datetime import datetime
 from face_analysis.improved_detection import ImprovedFaceAnalyzer
 from video_recorder import VideoRecorder
 from behavior_categories import BEHAVIOR_CATEGORIES
-from event_logger import log_event, get_event_type
 
 logger = logging.getLogger(__name__)
 
@@ -193,13 +192,8 @@ class OptimizedFrameProcessor:
                     "timestamp": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
                 }
             
-            # Log all events (not just when behaviors are detected) for continuous monitoring
-            try:
-                event_type = get_event_type(result)
-                log_event(self.log_dir, event_type, result)
-            except Exception as e:
-                logger.error(f"Error logging event: {str(e)}")
-
+            # NOTE: recording is handled by main.py on behavior-state changes (edge-triggered),
+            # so we no longer write a log entry for every frame here.
             return result
             
         except Exception as e:

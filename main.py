@@ -23,7 +23,7 @@ from typing import Dict, Any, Optional
 
 # Import project modules
 from frame_processor import OptimizedFrameProcessor
-from event_logger import log_event
+from event_logger import log_event, get_event_type
 from config_loader import load_config, DEFAULT_CONFIG_PATH
 from database_integration import db_bp, attach_database
 # ImprovedFaceAnalyzer is imported by frame_processor
@@ -63,6 +63,10 @@ app.register_blueprint(db_bp)
 # integration.database.enabled is true. Left as None means "file logging only".
 db_manager = None
 db_session_id = None
+
+# Last recorded behavior state (is_drowsy, is_yawning, is_distracted). Used to log/persist
+# only when the behavior changes (edge-triggered) instead of on every frame.
+_last_behavior_state = (False, False, False)
 
 
 def _db_behavior_rows(result):
@@ -480,7 +484,7 @@ def clear_alert_history():
 @app.route('/api/process_frame', methods=['POST'])
 def process_frame():
     """Process a single frame of video data"""
-    global session_id
+    global session_id, _last_behavior_state
     
     logger.debug("Received frame processing request")
     logger.debug("Content-Type: %s", request.content_type)
@@ -521,27 +525,32 @@ def process_frame():
         if behavior_category.get('is_distracted', False):
             behaviors.append('distracted')
             
-        # Log events if behaviors detected
-        if behaviors:
-            # Fixed: Use correct log_event signature (log_dir, event_type, event_data)
-            event_data = {
-                'session_id': session_id,
-                'timestamp': datetime.now().isoformat(),
-                'behavior_category': behavior_category,
-                'metrics': result.get('metrics', {}),
-                'behavior_confidence': result.get('behavior_confidence', 0.0)
-            }
-            event_type = "risky_behavior"
-            log_event(log_dir, event_type, event_data)
+        # Record ONLY on a behavior-state change (edge-triggered) rather than every frame,
+        # so the history and MySQL get one entry per transition instead of one per frame.
+        current_state = (
+            behavior_category.get('is_drowsy', False),
+            behavior_category.get('is_yawning', False),
+            behavior_category.get('is_distracted', False),
+        )
+        if current_state != _last_behavior_state:
+            # File log: one record reflecting the new state (keeps /api/latest_behavior current).
+            try:
+                log_event(log_dir, get_event_type(result), result)
+            except Exception as log_err:
+                logger.error(f"File log_event failed: {log_err}")
 
-            # Dual-write: persist each active behavior to MySQL (one row per behavior),
-            # only when enabled. Never let a DB error break frame processing.
-            if db_manager is not None and db_session_id is not None:
+            # MySQL: persist a row for each behavior that JUST turned on (its onset), if enabled.
+            if db_manager is not None and db_session_id is not None and any(current_state):
+                names = ('drowsy', 'yawning', 'distracted')
+                newly_on = {names[i] for i in range(3) if current_state[i] and not _last_behavior_state[i]}
                 try:
                     for row in _db_behavior_rows(result):
-                        db_manager.log_behavior(db_session_id, row)
+                        if row['behavior'] in newly_on:
+                            db_manager.log_behavior(db_session_id, row)
                 except Exception as db_err:
                     logger.error(f"MySQL log_behavior failed: {db_err}")
+
+            _last_behavior_state = current_state
 
         # Format response for frontend - FIX: Extract metrics correctly
         metrics = result.get('metrics', {})

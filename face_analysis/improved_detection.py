@@ -192,132 +192,83 @@ class ImprovedFaceAnalyzer:
     
     def calculate_head_pose(self, landmarks: np.ndarray, frame_shape: Tuple[int, int]) -> Tuple[float, float]:
         """
-        Calculate head pose (yaw, pitch) using improved geometric approach
-        Enhanced sensitivity for extreme head turns
-        
+        Estimate head pose (yaw, pitch) in degrees with cv2.solvePnP on six facial landmarks.
+
+        yaw  = left/right head rotation (drives distraction detection)
+        pitch = up/down head tilt
+        A forward-facing head returns values near 0; results are clamped to a sane range.
+
         Args:
-            landmarks: 68-point facial landmarks
+            landmarks: 68-point facial landmarks (pixel coordinates)
             frame_shape: (height, width) of the frame
-            
+
         Returns:
             Tuple of (yaw, pitch) in degrees
         """
         try:
-            # Validate inputs
-            if landmarks is None or landmarks.shape != (68, 2):
-                logger.debug(f"Head pose: invalid landmarks shape: {landmarks.shape if landmarks is not None else None}")
+            pts = np.asarray(landmarks, dtype=np.float64)
+            if pts.shape != (68, 2) or not np.all(np.isfinite(pts)):
+                logger.debug("Head pose: invalid landmarks")
                 return 0.0, 0.0
-            
+
             height, width = frame_shape
             if height <= 0 or width <= 0:
                 logger.debug(f"Head pose: invalid frame dimensions: {width}x{height}")
                 return 0.0, 0.0
-            
-            landmarks = np.array(landmarks, dtype=np.float64)
-            
-            # Check for invalid values
-            if np.any(np.isnan(landmarks)) or np.any(np.isinf(landmarks)):
-                logger.debug("Head pose: landmarks contain invalid values")
+
+            # Generic 3D head model (mm) for the six landmarks below.
+            model_points = np.array([
+                (0.0, 0.0, 0.0),           # nose tip          (idx 30)
+                (0.0, -330.0, -65.0),      # chin              (idx 8)
+                (-225.0, 170.0, -135.0),   # left eye, l corner (idx 36)
+                (225.0, 170.0, -135.0),    # right eye, r corner(idx 45)
+                (-150.0, -150.0, -125.0),  # left mouth corner (idx 48)
+                (150.0, -150.0, -125.0),   # right mouth corner(idx 54)
+            ], dtype=np.float64)
+            image_points = np.array(
+                [pts[30], pts[8], pts[36], pts[45], pts[48], pts[54]], dtype=np.float64
+            )
+
+            # Approximate pinhole camera (focal length ~ image width, principal point at center).
+            focal = float(width)
+            camera_matrix = np.array([
+                [focal, 0.0, width / 2.0],
+                [0.0, focal, height / 2.0],
+                [0.0, 0.0, 1.0],
+            ], dtype=np.float64)
+            dist_coeffs = np.zeros((4, 1))
+
+            ok, rotation_vec, _ = cv2.solvePnP(
+                model_points, image_points, camera_matrix, dist_coeffs,
+                flags=cv2.SOLVEPNP_ITERATIVE
+            )
+            if not ok:
                 return 0.0, 0.0
-            
-            # Extract key facial landmarks
-            nose_tip = landmarks[30]        # Nose tip
-            nose_bridge = landmarks[27]     # Nose bridge
-            chin = landmarks[8]             # Chin
-            left_eye_outer = landmarks[36]  # Left eye outer corner
-            right_eye_outer = landmarks[45] # Right eye outer corner
-            left_eye_inner = landmarks[39]  # Left eye inner corner
-            right_eye_inner = landmarks[42] # Right eye inner corner
-            left_mouth = landmarks[48]      # Left mouth corner
-            right_mouth = landmarks[54]     # Right mouth corner
-            left_jaw = landmarks[0]         # Left jawline
-            right_jaw = landmarks[16]       # Right jawline
-            
-            # Calculate face center
-            face_center_x = (left_eye_outer[0] + right_eye_outer[0]) / 2.0
-            face_center_y = (left_eye_outer[1] + right_eye_outer[1]) / 2.0
-            
-            # SIMPLIFIED AND MORE AGGRESSIVE YAW CALCULATION
-            # Focus on the most reliable indicators with much higher sensitivity
-            
-            # Primary cue: Nose displacement from eye center line
-            eye_center_x = (left_eye_outer[0] + right_eye_outer[0]) / 2.0
-            eye_distance = np.abs(right_eye_outer[0] - left_eye_outer[0])
-            
-            nose_displacement = 0.0
-            if eye_distance > 0:
-                nose_displacement = (nose_tip[0] - eye_center_x) / eye_distance
-            
-            # Secondary cue: Eye asymmetry (more aggressive calculation)
-            left_eye_width = np.abs(left_eye_outer[0] - left_eye_inner[0])
-            right_eye_width = np.abs(right_eye_outer[0] - right_eye_inner[0])
-            
-            eye_asymmetry = 0.0
-            if left_eye_width + right_eye_width > 0:
-                eye_asymmetry = (right_eye_width - left_eye_width) / (left_eye_width + right_eye_width)
-            
-            # Tertiary cue: Mouth displacement
-            mouth_center_x = (left_mouth[0] + right_mouth[0]) / 2.0
-            mouth_displacement = 0.0
-            if eye_distance > 0:
-                mouth_displacement = (mouth_center_x - eye_center_x) / eye_distance
-            
-            # Debug logging to see individual components
-            logger.debug(f"Yaw components: nose_disp={nose_displacement:.4f}, eye_asym={eye_asymmetry:.4f}, mouth_disp={mouth_displacement:.4f}")
-            
-            # Simplified combination - focus more on direct measurements
-            # Use higher weights and more aggressive scaling
-            primary_displacement = nose_displacement * 0.6 + mouth_displacement * 0.4
-            secondary_boost = eye_asymmetry * 0.3  # Additional boost from eye asymmetry
-            
-            total_displacement = primary_displacement + secondary_boost
-            
-            # MUCH MORE AGGRESSIVE SCALING
-            # The issue is that facial displacements are inherently small (0.05-0.2 range)
-            # We need to amplify these significantly for driver monitoring sensitivity
-            
-            abs_displacement = abs(total_displacement)
-            
-            if abs_displacement < 0.05:
-                # Very small movements - minimal yaw
-                yaw_magnitude = abs_displacement * 200.0  # 10x more aggressive than before
-            elif abs_displacement < 0.15:
-                # Moderate movements - linear scaling with high sensitivity  
-                yaw_magnitude = 10.0 + (abs_displacement - 0.05) * 400.0  # Very aggressive
+
+            # Rotation matrix -> Euler angles (degrees).
+            rmat, _ = cv2.Rodrigues(rotation_vec)
+            sy = float(np.sqrt(rmat[0, 0] ** 2 + rmat[1, 0] ** 2))
+            if sy > 1e-6:
+                pitch = np.degrees(np.arctan2(rmat[2, 1], rmat[2, 2]))
             else:
-                # Large movements - extreme yaw values
-                yaw_magnitude = 50.0 + (abs_displacement - 0.15) * 800.0  # Maximum sensitivity
-            
-            # Apply sign
-            yaw = yaw_magnitude if total_displacement >= 0 else -yaw_magnitude
-            
-            logger.debug(f"Yaw calculation: total_disp={total_displacement:.4f}, abs_disp={abs_displacement:.4f}, final_yaw={yaw:.2f}°")
-            
-            # Method 2: Calculate pitch using nose-chin relationship (unchanged - working well)
-            nose_chin_vertical = chin[1] - nose_tip[1]
-            eye_nose_vertical = nose_tip[1] - face_center_y
-            
-            if nose_chin_vertical > 0:
-                # Calculate pitch based on vertical proportions
-                vertical_ratio = eye_nose_vertical / nose_chin_vertical
-                # Convert to degrees (empirically tuned)
-                # Positive pitch = looking up, negative pitch = looking down
-                pitch = (vertical_ratio - 0.4) * 60.0  # Scale and offset for normal forward-looking pose
-            else:
-                pitch = 0.0
-            
-            # Apply reasonable bounds (wider range for yaw)
-            yaw = np.clip(yaw, -90.0, 90.0)
-            pitch = np.clip(pitch, -60.0, 60.0)
-            
-            # Final validation
-            if np.isnan(yaw) or np.isnan(pitch) or np.isinf(yaw) or np.isinf(pitch):
-                logger.debug("Head pose: invalid final values")
+                pitch = np.degrees(np.arctan2(-rmat[1, 2], rmat[1, 1]))
+            yaw = np.degrees(np.arctan2(-rmat[2, 0], sy))
+
+            # The 3D model is Y-up while image coords are Y-down, so a forward-facing head
+            # lands near +/-180 on pitch. Fold into [-90, 90] so "looking straight" reads ~0.
+            if pitch > 90.0:
+                pitch -= 180.0
+            elif pitch < -90.0:
+                pitch += 180.0
+
+            if not (np.isfinite(yaw) and np.isfinite(pitch)):
                 return 0.0, 0.0
-            
-            logger.debug(f"Head pose calculated: yaw={yaw:.2f}° (displacement={total_displacement:.3f}), pitch={pitch:.2f}°")
-            return float(yaw), float(pitch)
-            
+
+            yaw = float(np.clip(yaw, -90.0, 90.0))
+            pitch = float(np.clip(pitch, -90.0, 90.0))
+            logger.debug(f"Head pose (solvePnP): yaw={yaw:.2f}°, pitch={pitch:.2f}°")
+            return yaw, pitch
+
         except Exception as e:
             logger.error(f"Head pose calculation failed: {e}")
             return 0.0, 0.0
