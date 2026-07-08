@@ -1,37 +1,29 @@
 package com.example.eyedtrack
 
 import android.content.Context
-import android.content.Intent
 import android.content.SharedPreferences
 import android.media.AudioManager
 import android.os.Bundle
-import android.view.WindowManager
-import android.widget.ImageButton
+import android.view.View
 import android.widget.ImageView
 import android.widget.SeekBar
-import android.widget.Switch
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.materialswitch.MaterialSwitch
 
-// Activity for the "Sounds" screen with system-integrated sound settings.
+// Activity for the "Notifications & Sounds" screen with system-integrated sound settings.
 class SoundsActivity : AppCompatActivity() {
 
     private lateinit var audioManager: AudioManager
-    private lateinit var systemVolumeSwitch: Switch
+    private lateinit var systemVolumeSwitch: MaterialSwitch
     private lateinit var volumeSeekBar: SeekBar
-    private lateinit var vibrateSwitch: Switch
+    private lateinit var vibrateSwitch: MaterialSwitch
     private lateinit var volumeLabel: TextView
     private lateinit var sharedPreferences: SharedPreferences
 
     // Called when the activity is created.
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Enable fullscreen mode by hiding the status bar.
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_FULLSCREEN,
-            WindowManager.LayoutParams.FLAG_FULLSCREEN
-        )
 
         setContentView(R.layout.sounds_page) // Set the layout resource for this activity.
 
@@ -44,29 +36,10 @@ class SoundsActivity : AppCompatActivity() {
         setupVolumeControls()
         loadSettings()
 
-        // Initialize navigation buttons.
-        val backButton = findViewById<ImageView>(R.id.back_button)
-        val btnGoToSettings = findViewById<ImageButton>(R.id.settings_icon)
-        val btnGoToProfile = findViewById<ImageButton>(R.id.profile_icon)
-        val btnGoToHomePage = findViewById<ImageButton>(R.id.home_icon)
-
-        // Close the activity when the back button is clicked.
-        backButton.setOnClickListener {
-            finish()
-        }
-
-        // Navigation to other activities.
-        btnGoToProfile.setOnClickListener {
-            startActivity(Intent(this, ProfileActivity::class.java))
-        }
-
-        btnGoToSettings.setOnClickListener {
-            startActivity(Intent(this, SettingsActivity::class.java))
-        }
-
-        btnGoToHomePage.setOnClickListener {
-            startActivity(Intent(this, HomePageActivity::class.java))
-        }
+        // Wire top bar: back button and title.
+        val topBar = findViewById<View>(R.id.top_bar)
+        topBar.findViewById<ImageView>(R.id.btn_back).setOnClickListener { finish() }
+        topBar.findViewById<TextView>(R.id.top_bar_title).text = "Notifications & sounds"
     }
 
     private fun initializeViews() {
@@ -108,7 +81,7 @@ class SoundsActivity : AppCompatActivity() {
     private fun updateVolumeControlsState(useSystemVolume: Boolean) {
         volumeSeekBar.isEnabled = !useSystemVolume
         volumeLabel.alpha = if (useSystemVolume) 0.5f else 1.0f
-        
+
         if (useSystemVolume) {
             syncWithSystemVolume()
         }

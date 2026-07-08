@@ -1,175 +1,73 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/rootLayout"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:padding="24dp"
-    android:background="@android:color/white">
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground" android:fillViewport="true">
 
-    <!-- App logo at the top center -->
-    <ImageView
-        android:id="@+id/logoImage"
-        android:layout_width="250dp"
-        android:layout_height="180dp"
-        android:contentDescription="EyeDTrack Logo"
-        android:src="@drawable/logodark"
-        android:layout_marginTop="15dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:gravity="center_horizontal"
+        android:padding="@dimen/space_2xl">
 
-    <!-- Main title of the app -->
-    <TextView
-        android:id="@+id/textTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="EyeDTrack"
-        android:textSize="32sp"
-        android:textColor="#001F54"
-        android:textStyle="bold"
-        app:layout_constraintTop_toBottomOf="@id/logoImage"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        <FrameLayout android:layout_width="72dp" android:layout_height="72dp"
+            android:layout_marginTop="@dimen/space_3xl" android:background="@drawable/bg_icon_tile">
+            <ImageView android:layout_width="40dp" android:layout_height="40dp"
+                android:layout_gravity="center" android:src="@drawable/ic_logo_eye"
+                android:contentDescription="EyedTrack" />
+        </FrameLayout>
 
-    <!-- Subtitle or tagline describing the app's purpose -->
-    <TextView
-        android:id="@+id/textSubtitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:text="Your companion for drowsy-free journeys."
-        android:textColor="#060644"
-        android:textSize="16sp"
-        android:textAlignment="center"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.558"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textTitle" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_lg" android:text="EyedTrack"
+            android:textAppearance="?attr/textAppearanceDisplaySmall" android:textColor="?attr/colorOnSurface" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs" android:gravity="center"
+            android:text="Your companion for drowsy-free journeys"
+            android:textAppearance="?attr/textAppearanceBodyMedium" android:textColor="?attr/colorOnSurfaceVariant" />
 
-    <!-- Short description of app functionality -->
-    <TextView
-        android:id="@+id/textDescription"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Driving safety first! EyeDTrack detects distractions to keep you awake and aware."
-        android:textSize="14sp"
-        android:textAlignment="center"
-        android:textColor="#060644"
-        app:layout_constraintTop_toBottomOf="@id/textSubtitle"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="15dp"/>
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.EyedTrack.TextField"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_2xl" android:hint="Email or phone">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/editTextEmail" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:inputType="textEmailAddress" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-    <!-- Input field for user email or phone -->
-    <EditText
-        android:id="@+id/editTextEmail"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:background="@android:drawable/edit_text"
-        android:backgroundTint="#E5E5E5"
-        android:hint="Email or phone number"
-        android:padding="12dp"
-        android:textSize="16sp"
-        android:inputType="textEmailAddress"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textDescription" />
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/togglePasswordVisibility"
+            style="@style/Widget.EyedTrack.TextField"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md" android:hint="Password"
+            app:endIconMode="password_toggle">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/editTextPassword" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:inputType="textPassword" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-    <!-- Input field for user password -->
-    <EditText
-        android:id="@+id/editTextPassword"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:hint="Enter password"
-        android:background="@android:drawable/edit_text"
-        android:backgroundTint="#E5E5E5"
-        android:padding="12dp"
-        android:textSize="16sp"
-        android:inputType="textPassword"
-        app:layout_constraintTop_toBottomOf="@id/editTextEmail"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="8dp"/>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md" android:gravity="center_vertical">
+            <com.google.android.material.checkbox.MaterialCheckBox android:id="@+id/checkBoxRememberMe"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Remember me" android:textColor="?attr/colorOnSurfaceVariant" />
+            <TextView android:id="@+id/textForgotPassword" android:layout_width="0dp"
+                android:layout_weight="1" android:layout_height="wrap_content" android:gravity="end"
+                android:text="Forgot password?" android:textColor="@color/blue_400"
+                android:textAppearance="?attr/textAppearanceLabelLarge" />
+        </LinearLayout>
 
-    <!-- Icon to toggle visibility of password -->
-    <ImageView
-        android:id="@+id/togglePasswordVisibility"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:contentDescription="Toggle Password Visibility"
-        android:src="@drawable/pass_unview"
-        android:layout_marginEnd="15dp"
-        app:layout_constraintBottom_toBottomOf="@+id/editTextPassword"
-        app:layout_constraintEnd_toEndOf="@+id/editTextPassword"
-        app:layout_constraintTop_toTopOf="@+id/editTextPassword" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/buttonSignIn"
+            style="@style/Widget.EyedTrack.Button" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_xl"
+            android:text="Sign in" />
 
-    <!-- Checkbox to allow remembering login credentials -->
-    <CheckBox
-        android:id="@+id/checkBoxRememberMe"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Remember Me"
-        app:layout_constraintTop_toBottomOf="@id/editTextPassword"
-        app:layout_constraintStart_toStartOf="parent"
-        android:layout_marginTop="15dp"/>
-
-    <!-- Link for users to recover forgotten passwords -->
-    <TextView
-        android:id="@+id/textForgotPassword"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="15dp"
-        android:text="Forgot password?"
-        android:textColor="#0000FF"
-        android:textSize="14sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/checkBoxRememberMe" />
-
-    <!-- Sign-in button to log in to the app -->
-    <Button
-        android:id="@+id/buttonSignIn"
-        android:layout_width="0dp"
-        android:layout_height="50dp"
-        android:text="Sign in"
-        android:textSize="16sp"
-        android:backgroundTint="#001F54"
-        android:textColor="@android:color/white"
-        app:layout_constraintTop_toBottomOf="@id/checkBoxRememberMe"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="20dp"/>
-
-    <!-- Prompt for users who don’t have an account -->
-    <TextView
-        android:id="@+id/textNoAccount"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_marginTop="24dp"
-        android:text="Don't have an account?"
-        android:textColor="#808080"
-        android:textSize="14sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/buttonSignIn" />
-
-    <!-- Link to navigate to the Sign-Up screen -->
-    <TextView
-        android:id="@+id/textSignUp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="17dp"
-        android:text=" Sign up now"
-        android:textColor="#0000FF"
-        android:textSize="14sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textNoAccount" />
-
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_2xl" android:gravity="center">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Don't have an account? " android:textColor="?attr/colorOnSurfaceVariant"
+                android:textAppearance="?attr/textAppearanceBodyMedium" />
+            <TextView android:id="@+id/textSignUp" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:text="Sign up now"
+                android:textColor="@color/blue_400" android:textAppearance="?attr/textAppearanceLabelLarge" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

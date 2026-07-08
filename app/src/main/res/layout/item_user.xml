@@ -1,55 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    style="@style/Widget.EyedTrack.Card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="4dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="2dp">
+    android:layout_marginVertical="@dimen/space_xs">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="12dp">
+        android:orientation="vertical">
 
         <TextView
             android:id="@+id/txtName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="John Doe"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="#060644"
-            android:layout_marginBottom="4dp"/>
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:textColor="?attr/colorOnSurface"
+            android:layout_marginBottom="@dimen/space_xs"
+            tools:text="John Doe" />
 
         <TextView
             android:id="@+id/txtEmail"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="john.doe@gmail.com"
-            android:textSize="14sp"
-            android:textColor="#333333"
-            android:layout_marginBottom="4dp"/>
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:layout_marginBottom="@dimen/space_xs"
+            tools:text="john.doe@gmail.com" />
 
         <TextView
             android:id="@+id/txtMobile"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="12345678901"
-            android:textSize="14sp"
-            android:textColor="#333333"
-            android:layout_marginBottom="8dp"/>
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:layout_marginBottom="@dimen/space_md"
+            tools:text="12345678901" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnDelete"
+            style="@style/Widget.EyedTrack.Button.Danger"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Delete User"
-            android:backgroundTint="#FF5733"
-            android:textColor="#FFFFFF"
-            android:textSize="14sp"/>
+            android:text="Delete User" />
 
     </LinearLayout>
 
-</androidx.cardview.widget.CardView> 
+</com.google.android.material.card.MaterialCardView>

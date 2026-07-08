@@ -5,12 +5,11 @@ import android.os.Bundle
 import android.text.InputFilter
 import android.text.InputType
 import android.text.Spanned
-import android.view.WindowManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.appcompat.app.AppCompatActivity
 import java.util.regex.Pattern
 
@@ -18,12 +17,6 @@ class SignUpActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.signup_page)
-
-        // Enable fullscreen mode by hiding the status bar.
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_FULLSCREEN,
-            WindowManager.LayoutParams.FLAG_FULLSCREEN
-        )
 
         val firstNameInput = findViewById<EditText>(R.id.firstNameInput)
         val lastNameInput = findViewById<EditText>(R.id.lastNameInput)
@@ -90,7 +83,7 @@ class SignUpActivity : AppCompatActivity() {
                 Mobile: $mobile
             """.trimIndent()
 
-            AlertDialog.Builder(this)
+            MaterialAlertDialogBuilder(this)
                 .setTitle("Confirm Sign Up")
                 .setMessage(confirmationMessage)
                 .setPositiveButton("Confirm") { _, _ ->

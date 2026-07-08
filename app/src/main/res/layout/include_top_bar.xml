@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:orientation="horizontal" android:gravity="center_vertical"
+    android:paddingHorizontal="@dimen/space_sm" android:paddingVertical="@dimen/space_sm"
+    android:background="?android:attr/colorBackground">
+    <ImageView android:id="@+id/btn_back" android:layout_width="@dimen/touch_min"
+        android:layout_height="@dimen/touch_min" android:padding="@dimen/space_md"
+        android:src="@drawable/ic_arrow_back" android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Back" />
+    <TextView android:id="@+id/top_bar_title" android:layout_width="wrap_content"
+        android:layout_height="wrap_content" android:layout_marginStart="@dimen/space_xs"
+        android:textAppearance="?attr/textAppearanceTitleLarge" android:textColor="?attr/colorOnSurface" />
+</LinearLayout>

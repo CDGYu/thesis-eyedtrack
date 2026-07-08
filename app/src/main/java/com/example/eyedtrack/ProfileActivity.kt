@@ -1,22 +1,19 @@
 package com.example.eyedtrack
 
-import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
-import android.view.WindowManager
-import android.widget.ImageButton
 import androidx.appcompat.app.AppCompatActivity
 import android.widget.TextView
 import java.util.Calendar
-import android.app.AlertDialog
 import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
 import android.widget.ImageView
 import android.view.Menu
 import android.view.MenuItem
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 // Activity for the profile screen.
 class ProfileActivity : AppCompatActivity() {
@@ -26,16 +23,12 @@ class ProfileActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Enable fullscreen mode by hiding the status bar.
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_FULLSCREEN,
-            WindowManager.LayoutParams.FLAG_FULLSCREEN
-        )
-
         setContentView(R.layout.profile_page) // Set the layout resource for this activity.
 
-        // Scale up the profile icon.
-        scaleImageButton(findViewById(R.id.profile_icon))
+        // Wire up the top bar back button and title.
+        val topBar = findViewById<View>(R.id.top_bar)
+        topBar.findViewById<ImageView>(R.id.btn_back).setOnClickListener { finish() }
+        topBar.findViewById<TextView>(R.id.top_bar_title).text = "Profile"
 
         // Check if user is logged in, redirect to login if not
         if (!PreferenceManager.isLoggedIn(this)) {
@@ -48,12 +41,12 @@ class ProfileActivity : AppCompatActivity() {
 
         // Get user data from PreferenceManager
         val userData = PreferenceManager.getUserData(this)
-        
+
         // Update profile name at the top
         val profileName = findViewById<TextView>(R.id.profile_name)
         val fullName = "${userData["firstName"]} ${userData["lastName"]}"
         profileName.text = fullName
-        
+
         // Find all profile fields and update them with user data
         val fullNameTextView = findViewById<TextView>(R.id.fullname)
         val emailTextView = findViewById<TextView>(R.id.email)
@@ -69,26 +62,10 @@ class ProfileActivity : AppCompatActivity() {
         emailTextView.isEnabled = false
         mobileTextView.isEnabled = false
 
-        // Initialize buttons.
-        val btnGoToSettings = findViewById<ImageButton>(R.id.settings_icon)
-        val btnGoToHomePage = findViewById<ImageButton>(R.id.home_icon)
-
-        // Navigate to SettingsActivity.
-        btnGoToSettings.setOnClickListener {
-            val intent = Intent(this, SettingsActivity::class.java)
-            startActivity(intent)
-        }
-
-        // Navigate to HomePageActivity.
-        btnGoToHomePage.setOnClickListener {
-            val intent = Intent(this, HomePageActivity::class.java)
-            startActivity(intent)
-        }
-
         val logoutTextView = findViewById<TextView>(R.id.logout)
 
         logoutTextView.setOnClickListener {
-            val builder = AlertDialog.Builder(this, R.style.CustomAlertDialog)
+            val builder = MaterialAlertDialogBuilder(this)
             builder.setTitle("Confirm Logout")
             builder.setMessage("Are you sure you want to logout?")
 
@@ -105,11 +82,11 @@ class ProfileActivity : AppCompatActivity() {
             val dialog = builder.create()
             dialog.show()
         }
-        
+
         // Log preferences for easy access during development
         PreferencesDebugger.logPreferences(this)
     }
-    
+
     // Common logout logic
     private fun performLogout() {
         Toast.makeText(this, "Logging out...", Toast.LENGTH_SHORT).show()
@@ -121,13 +98,13 @@ class ProfileActivity : AppCompatActivity() {
             finish()
         }, 1500)
     }
-    
+
     // Add debug menu options
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menu.add(0, 1, 0, "Show Preferences")
         return true
     }
-    
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             1 -> {
@@ -136,15 +113,5 @@ class ProfileActivity : AppCompatActivity() {
             }
         }
         return super.onOptionsItemSelected(item)
-    }
-
-    // Scales up the selected button.
-    private fun scaleImageButton(button: View) {
-        val scaleX = ObjectAnimator.ofFloat(button, "scaleX", 1.5f)
-        val scaleY = ObjectAnimator.ofFloat(button, "scaleY", 1.5f)
-        scaleX.duration = 300 // Animation duration for X scaling.
-        scaleY.duration = 300 // Animation duration for Y scaling.
-        scaleX.start()
-        scaleY.start()
     }
 }

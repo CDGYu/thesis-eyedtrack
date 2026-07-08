@@ -3,16 +3,13 @@ package com.example.eyedtrack
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
-import android.text.InputType
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
-import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -24,12 +21,6 @@ class LoginActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Enable fullscreen mode by hiding the status bar.
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_FULLSCREEN,
-            WindowManager.LayoutParams.FLAG_FULLSCREEN
-        )
-
         setContentView(R.layout.activity_login) // Set the layout resource for this activity.
 
         // Initialize input fields and buttons.
@@ -39,7 +30,6 @@ class LoginActivity : AppCompatActivity() {
         val forgotPasswordText = findViewById<TextView>(R.id.textForgotPassword)
         val signUpText = findViewById<TextView>(R.id.textSignUp)
         val rememberMeCheckBox = findViewById<CheckBox>(R.id.checkBoxRememberMe)
-        val togglePasswordButton = findViewById<ImageView>(R.id.togglePasswordVisibility)
 
         // Check if we came from signup with email
         val emailFromSignup = intent.getStringExtra("EMAIL")
@@ -57,20 +47,6 @@ class LoginActivity : AppCompatActivity() {
                     passwordEditText.setText(rememberedCredentials.second)
                 }
             }
-        }
-
-        // Toggle password visibility.
-        togglePasswordButton.setOnClickListener {
-            if (passwordEditText.inputType == InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD) {
-                // Hide password input.
-                passwordEditText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-                togglePasswordButton.setImageResource(R.drawable.pass_unview) // Change icon to hidden state.
-            } else {
-                // Show password input.
-                passwordEditText.inputType = InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
-                togglePasswordButton.setImageResource(R.drawable.pass_view) // Change icon to visible state.
-            }
-            passwordEditText.setSelection(passwordEditText.text.length) // Maintain cursor position.
         }
 
         // Handle sign-in button click event.
