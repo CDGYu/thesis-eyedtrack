@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:padding="@dimen/space_lg"
+    android:background="?android:attr/colorBackground">
+
+    <com.google.android.material.card.MaterialCardView
+        style="@style/Widget.EyedTrack.Card"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/space_md">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical">
+            <LinearLayout android:layout_width="0dp" android:layout_weight="1"
+                android:layout_height="wrap_content" android:orientation="vertical">
+                <TextView android:id="@+id/status_headline" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:text="Not monitoring"
+                    android:textAppearance="?attr/textAppearanceTitleLarge"
+                    android:textColor="?attr/colorOnSurface" />
+                <TextView android:id="@+id/status_sub" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:text="Tap start to begin"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+            </LinearLayout>
+            <TextView android:id="@+id/status_pill" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:background="@drawable/pill_idle"
+                android:paddingHorizontal="@dimen/space_md" android:paddingVertical="@dimen/space_xs"
+                android:text="IDLE" android:textAppearance="?attr/textAppearanceLabelLarge"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <androidx.camera.view.PreviewView
+        android:id="@+id/previewView"
+        android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="1" app:scaleType="fitCenter"
+        android:background="@color/ink_900" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_toggle_monitoring"
+        style="@style/Widget.EyedTrack.Button"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_lg" android:text="Start Monitoring" />
+</LinearLayout>

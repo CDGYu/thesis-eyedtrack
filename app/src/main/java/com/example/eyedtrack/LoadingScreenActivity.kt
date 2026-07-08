@@ -28,10 +28,13 @@ class LoadingScreenActivity : AppCompatActivity() {
         // Delay navigation for 4 seconds to simulate loading.
         Handler(Looper.getMainLooper()).postDelayed({
             // Check if Terms & Conditions have been accepted.
-            val nextActivity = if (PreferenceManager.isAccepted(this)) {
-                LoginActivity::class.java // Proceed to LoginActivity if accepted.
-            } else {
-                TermsAndConditionsActivity::class.java // Proceed to TermsAndConditionsActivity if not accepted.
+            val nextActivity = when {
+                !PreferenceManager.isAccepted(this) ->
+                    TermsAndConditionsActivity::class.java // T&C not accepted yet.
+                PreferenceManager.isLoggedIn(this) ->
+                    MainActivity::class.java // Already logged in — skip login screen.
+                else ->
+                    LoginActivity::class.java // T&C accepted but not logged in.
             }
 
             // Start the next activity.

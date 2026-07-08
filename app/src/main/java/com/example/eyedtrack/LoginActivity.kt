@@ -95,8 +95,8 @@ class LoginActivity : AppCompatActivity() {
                 
                 Toast.makeText(this, "Login successful!", Toast.LENGTH_SHORT).show()
 
-                // Navigate to HomePageActivity.
-                val intent = Intent(this, HomePageActivity::class.java)
+                // Navigate to MainActivity (bottom-nav host).
+                val intent = Intent(this, MainActivity::class.java)
                 startActivity(intent)
 
                 // Close LoginActivity to prevent going back.

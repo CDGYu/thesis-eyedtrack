@@ -86,6 +86,9 @@
         <!-- Activity for user profile information -->
         <activity android:name=".ProfileActivity" android:exported="false" />
 
+        <!-- Host activity for the bottom-nav tabs -->
+        <activity android:name=".MainActivity" android:exported="false" />
+
         <!-- Main user dashboard after login -->
         <activity android:name=".HomePageActivity" android:exported="false" />
 

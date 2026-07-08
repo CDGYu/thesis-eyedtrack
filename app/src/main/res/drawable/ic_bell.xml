@@ -1,0 +1,12 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <!-- Bell body -->
+    <path android:strokeColor="@color/text_hi" android:strokeWidth="1.9"
+        android:fillColor="#00000000" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M5,18 V17 C5,17 6,16 6,10 C6,6.5 8.7,4 12,4 C15.3,4 18,6.5 18,10 C18,16 19,17 19,17 V18 Z" />
+    <!-- Clapper -->
+    <path android:strokeColor="@color/text_hi" android:strokeWidth="1.9"
+        android:fillColor="#00000000" android:strokeLineCap="round"
+        android:pathData="M10,18 a2,2 0 0,0 4,0" />
+</vector>

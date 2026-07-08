@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_main"
+    app:startDestination="@id/dashboardFragment">
+
+    <fragment android:id="@+id/dashboardFragment"
+        android:name="com.example.eyedtrack.ui.DashboardFragment"
+        android:label="Dashboard" />
+    <fragment android:id="@+id/monitorFragment"
+        android:name="com.example.eyedtrack.ui.MonitorFragment"
+        android:label="Monitor" />
+    <fragment android:id="@+id/historyFragment"
+        android:name="com.example.eyedtrack.ui.HistoryFragment"
+        android:label="History" />
+    <fragment android:id="@+id/accountFragment"
+        android:name="com.example.eyedtrack.ui.AccountFragment"
+        android:label="Account" />
+</navigation>

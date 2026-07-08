@@ -1,0 +1,16 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <!-- Circle -->
+    <path android:strokeColor="@color/text_hi" android:strokeWidth="1.9"
+        android:fillColor="#00000000"
+        android:pathData="M3,12 a9,9 0 1,0 18,0 a9,9 0 1,0 -18,0" />
+    <!-- Question mark curve -->
+    <path android:strokeColor="@color/text_hi" android:strokeWidth="1.9"
+        android:fillColor="#00000000" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M9.5,9.5 C9.5,7.5 14.5,7.5 14.5,10.5 C14.5,12.5 12,12.5 12,14" />
+    <!-- Question mark dot -->
+    <path android:strokeColor="@color/text_hi" android:strokeWidth="2"
+        android:fillColor="#00000000" android:strokeLineCap="round"
+        android:pathData="M12,16.5 v0.01" />
+</vector>

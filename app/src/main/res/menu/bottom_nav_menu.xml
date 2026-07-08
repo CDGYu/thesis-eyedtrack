@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/dashboardFragment" android:icon="@drawable/ic_nav_dashboard" android:title="Dashboard" />
+    <item android:id="@+id/monitorFragment"   android:icon="@drawable/ic_nav_monitor"   android:title="Monitor" />
+    <item android:id="@+id/historyFragment"    android:icon="@drawable/ic_nav_history"    android:title="History" />
+    <item android:id="@+id/accountFragment"    android:icon="@drawable/ic_nav_account"    android:title="Account" />
+</menu>

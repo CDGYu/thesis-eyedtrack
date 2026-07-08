@@ -1,0 +1,20 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <!-- Front person head -->
+    <path android:strokeColor="@color/text_hi" android:strokeWidth="1.9"
+        android:fillColor="#00000000"
+        android:pathData="M9,8 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0" />
+    <!-- Front person body -->
+    <path android:strokeColor="@color/text_hi" android:strokeWidth="1.9"
+        android:fillColor="#00000000" android:strokeLineCap="round"
+        android:pathData="M3,21 C3,17.5 6,15 9.5,15 C13,15 16,17.5 16,21" />
+    <!-- Back person head -->
+    <path android:strokeColor="@color/text_hi" android:strokeWidth="1.9"
+        android:fillColor="#00000000"
+        android:pathData="M16,7 a2.5,2.5 0 1,0 5,0 a2.5,2.5 0 1,0 -5,0" />
+    <!-- Back person body arc -->
+    <path android:strokeColor="@color/text_hi" android:strokeWidth="1.9"
+        android:fillColor="#00000000" android:strokeLineCap="round"
+        android:pathData="M18,13 C19.5,13 21,14 21,17" />
+</vector>
