@@ -70,7 +70,7 @@ All routes exercised against the running server this session:
 MySQL persistence was silently disabled because `eyedtrack_app` could not authenticate. Root cause: the user pre-existed, so `CREATE USER IF NOT EXISTS` **skipped** setting the password. Fixed by forcing it as root:
 
 ```sql
-ALTER USER 'eyedtrack_app'@'localhost' IDENTIFIED BY 'eyedtrack_pw';
+ALTER USER 'eyedtrack_app'@'localhost' IDENTIFIED BY '<db-password>';
 GRANT ALL PRIVILEGES ON eyedtrack_db.* TO 'eyedtrack_app'@'localhost';
 FLUSH PRIVILEGES;
 ```
@@ -79,7 +79,7 @@ After the fix the backend logs `✅ MySQL persistence enabled` and `/api/db/heal
 
 > **Run requirement:** the password is intentionally **not** stored in `config.yaml` (`password: ""`). Start the backend with the env var:
 > ```bash
-> EYEDTRACK_DB_PASSWORD=eyedtrack_pw python main.py
+> EYEDTRACK_DB_PASSWORD=<db-password> python main.py
 > ```
 > Without it, the server still runs but falls back to **file-only** logging (the app keeps working via `/api/alert_history`).
 
@@ -102,12 +102,12 @@ Auto-created by `Base.metadata.create_all` on connect. All **InnoDB**, `utf8mb4_
 |---|---|---|---|
 | `driver_behaviors` | `db_manager.log_behavior` @ `main.py:549` | On behavior **onset** (edge-triggered) when DB enabled | ✅ **used** |
 | `monitoring_sessions` | `create_monitoring_session` @ `main.py:184` | At `initialize_system()` | ⚠️ used, but see C.4 |
-| `alert_logs` | `log_alert` (defined, **0 callers**) | never | ❌ **dead write path** |
-| `performance_metrics` | `log_performance_metrics` (defined, **0 callers**) | never | ❌ **dead write path** |
+| `alert_logs` | `log_alert` via `_persist_onsets` @ `main.py` | On behavior **onset** (with the behavior row) | ✅ **used** (wired 2026-07-09; 0 callers at audit) |
+| `performance_metrics` | `log_performance_metrics` via `_sample_performance` @ `main.py` | Every ~30 processed frames (sampled) | ✅ **used** (wired 2026-07-09; 0 callers at audit) |
 
-`end_monitoring_session` also exists with **0 callers** — sessions are never closed (all rows stay `status=active`, `end_time=NULL`).
+`end_monitoring_session` was also **0 callers** at audit (sessions never closed); **wired 2026-07-09** via an `atexit` shutdown hook (best-effort — not on a forced kill).
 
-**All four tables are structurally writable** — verified by calling `log_alert` / `log_performance_metrics` directly against live MySQL; rows inserted and read back cleanly. So `alert_logs` / `performance_metrics` are **unused, not broken**.
+**All four tables are structurally writable** — verified against live MySQL. At audit `alert_logs` / `performance_metrics` were unused (not broken); **both are now wired** (see Recommendations), so all four tables fill in normal operation.
 
 ### C.4 Read-path audit
 
@@ -130,7 +130,7 @@ MAPPED_ROWS [{"behavior":"drowsy","confidence":0.9,"is_risky":true,"ear":0.14,"m
 
 ### C.6 DB thoroughness — bottom line
 
-The persistence layer is **functional and structurally sound**. The gaps are *coverage*, not *correctness*: 2 tables have no writer, sessions aren't closed, and the app doesn't read MySQL. Recommendations below; all are **out of the approved scope** (no schema redesign) and left as follow-ups.
+The persistence layer is **functional and structurally sound**. The coverage gaps found at audit — `alert_logs` / `performance_metrics` unwritten and sessions never closed — were **fixed on this branch (2026-07-09)**, so all 4 tables now fill. Remaining items are optional (the app still reads file-based history, and the `debug` reloader still double-creates sessions). See Recommendations.
 
 ---
 
@@ -139,11 +139,11 @@ The persistence layer is **functional and structurally sound**. The gaps are *co
 **Applied on this branch (2026-07-09):**
 - ✅ **Error handling** — `/api/process_frame` now returns **400** for missing / malformed-JSON / undecodable frames and **no longer leaks `traceback`** (or the raw request body) in responses; genuine faults log the traceback server-side and return a generic 500. (`main.py`)
 - ✅ **`alert_logs` now fills** — behavior onsets write a `driver_behaviors` **and** an `alert_logs` row via a shared `_persist_onsets` helper (severity: drowsy/distracted=high, yawning=medium). (`main.py`)
+- ✅ **`performance_metrics` now fills** — a sampled `_sample_performance` writes one row every ~30 processed frames: avg `processing_time` + `fps` (pipeline capacity = 1/avg processing time, so it can't blow up), plus `cpu_usage`/`memory_usage` when `psutil` is installed (else null). (`main.py`)
 - ✅ **Session lifecycle** — an `atexit` hook calls `end_monitoring_session` on shutdown, so sessions close (`status=completed`, `end_time` set). Best-effort: runs on normal exit / Ctrl+C, not on a forced kill.
 - ✅ **DB password via `.env`** — `config_loader` auto-loads a gitignored `.env` (real env vars still win), so plain `python main.py` connects to MySQL without an inline prefix. Template committed as `.env.example`.
 
-**Still open (out of scope / optional):**
-- **`performance_metrics`** still has no writer — wire `log_performance_metrics` per N frames if the table is wanted, else drop it. (Deliberately left; not requested.)
+**Still open (optional):**
 - **Reloader duplication** — run with `use_reloader=False` (or `debug=False` / a real WSGI server) outside local dev to stop the 2-sessions-per-launch; `debug=True` also exposes the Werkzeug debugger. (Session-close now cleans the orphan on shutdown.)
 - **Read parity** — either surface MySQL history in the app (via `/api/db/behaviors/recent`) or keep file-based history as the source of truth and treat MySQL as analytics-only.
 - **Schema polish (optional)** — int FKs to `monitoring_sessions.id`; add a `timestamp` index for time-range queries.
@@ -153,8 +153,8 @@ The persistence layer is **functional and structurally sound**. The gaps are *co
 ```sql
 -- as MySQL root, once:
 CREATE DATABASE IF NOT EXISTS eyedtrack_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER IF NOT EXISTS 'eyedtrack_app'@'localhost' IDENTIFIED BY 'eyedtrack_pw';
-ALTER USER 'eyedtrack_app'@'localhost' IDENTIFIED BY 'eyedtrack_pw';   -- forces pw if user pre-existed
+CREATE USER IF NOT EXISTS 'eyedtrack_app'@'localhost' IDENTIFIED BY '<db-password>';
+ALTER USER 'eyedtrack_app'@'localhost' IDENTIFIED BY '<db-password>';   -- forces pw if user pre-existed
 GRANT ALL PRIVILEGES ON eyedtrack_db.* TO 'eyedtrack_app'@'localhost';
 FLUSH PRIVILEGES;
 ```
@@ -163,5 +163,5 @@ FLUSH PRIVILEGES;
 # Preferred: put the password in a gitignored .env (copy .env.example), then just:
 python main.py                                      # config_loader auto-loads .env; tables auto-create
 # Or pass it inline (a real env var overrides .env):
-EYEDTRACK_DB_PASSWORD=eyedtrack_pw python main.py
+EYEDTRACK_DB_PASSWORD=<db-password> python main.py
 ```

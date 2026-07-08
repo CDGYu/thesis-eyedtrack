@@ -16,6 +16,12 @@ from pathlib import Path
 import sys
 import traceback
 import atexit
+try:
+    import psutil  # optional: enables cpu/memory in performance_metrics; those stay null without it
+    _PROC = psutil.Process()
+except Exception:
+    psutil = None
+    _PROC = None
 from flask import Flask, request, jsonify, make_response
 from flask_cors import CORS
 import json
@@ -130,6 +136,70 @@ def _end_db_session_on_exit(manager, sid):
             logger.info(f"Closed monitoring session {sid} on shutdown")
     except Exception as e:
         logger.error(f"Failed to close monitoring session {sid}: {e}")
+
+
+# --- performance_metrics sampling ------------------------------------------------
+# Write one performance_metrics row every PERF_SAMPLE_EVERY processed frames (rather than
+# one row per frame, which would flood the table). Each row summarizes the window: average
+# processing time per frame plus throughput (frames / wall-clock elapsed).
+PERF_SAMPLE_EVERY = 30
+_perf_count = 0
+_perf_dts = []
+_perf_window_start = None
+
+
+def _cpu_percent():
+    try:
+        return psutil.cpu_percent(interval=None) if psutil else None
+    except Exception:
+        return None
+
+
+def _memory_mb():
+    try:
+        return round(_PROC.memory_info().rss / (1024 * 1024), 1) if _PROC else None
+    except Exception:
+        return None
+
+
+def _persist_performance(processing_time, fps, extra=None):
+    """Write one performance_metrics row. No-op unless persistence is enabled; never raises."""
+    if db_manager is None or db_session_id is None:
+        return
+    try:
+        db_manager.log_performance_metrics(db_session_id, {
+            'fps': fps,
+            'processing_time': processing_time,
+            'cpu_usage': _cpu_percent(),
+            'memory_usage': _memory_mb(),
+            'additional_metrics': extra,
+        })
+    except Exception as db_err:
+        logger.error(f"MySQL performance persist failed: {db_err}")
+
+
+def _sample_performance(processing_time):
+    """Accumulate per-frame processing time; every PERF_SAMPLE_EVERY frames persist one
+    performance_metrics row summarizing the window (avg processing_time + throughput fps)."""
+    global _perf_count, _perf_dts, _perf_window_start
+    if db_manager is None or db_session_id is None:
+        return
+    now = time.time()
+    if _perf_window_start is None:
+        _perf_window_start = now
+    _perf_count += 1
+    _perf_dts.append(processing_time)
+    if _perf_count % PERF_SAMPLE_EVERY == 0:
+        elapsed = max(now - _perf_window_start, 1e-6)
+        n = len(_perf_dts)
+        avg_dt = sum(_perf_dts) / n if n else processing_time
+        # fps = pipeline capacity (frames/sec the processor sustains). Robust — unlike
+        # frames/wall-elapsed it can't blow up on a tiny window or idle gaps between requests.
+        fps = round(1.0 / avg_dt, 2) if avg_dt > 0 else 0.0
+        _persist_performance(round(avg_dt, 5), fps,
+                             extra={'frames': n, 'window_seconds': round(elapsed, 3)})
+        _perf_dts = []
+        _perf_window_start = now
 
 
 @app.before_request
@@ -560,8 +630,10 @@ def process_frame():
             }), 400
         logger.debug("Successfully converted frame to CV2 image. Shape: %s", frame.shape if frame is not None else None)
         
-        # Process the frame
+        # Process the frame (timed for performance_metrics sampling)
+        _t0 = time.time()
         result = frame_processor.process_frame(frame)
+        proc_dt = time.time() - _t0
         logger.debug("Frame processing result: %s", result)
         
         # Format behaviors for response - FIX: Extract from correct structure
@@ -596,6 +668,9 @@ def process_frame():
                 _persist_onsets(result, newly_on)
 
             _last_behavior_state = current_state
+
+        # MySQL: sample performance_metrics every N frames (throughput + processing time).
+        _sample_performance(proc_dt)
 
         # Format response for frontend - FIX: Extract metrics correctly
         metrics = result.get('metrics', {})
