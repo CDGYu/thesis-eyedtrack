@@ -144,3 +144,6 @@ captures/
 
 # Superpowers brainstorming visual-companion mockups/state
 .superpowers/
+
+# uipro-installed design skills (removed; do not re-track)
+.claude/skills/
