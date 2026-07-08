@@ -130,9 +130,12 @@ downloadable font. Weights: Sora 500/600/700/800, Inter 400/500/600/700. Define
 - **Touch targets:** min 48×48dp.
 
 ### 3.4 Theme
-- Parent: `Theme.Material3.DayNight.NoActionBar`, named `Theme.EyeDTrack`.
-- Dark-first: `values/themes.xml` defines the dark theme as default; `values-night/themes.xml`
-  is identical (app renders dark in both system modes). Light theme is out of scope.
+- Parent: `Theme.Material3.Dark.NoActionBar`, named `Theme.EyeDTrack`. _(Corrected during
+  Plan 1 code review from `.DayNight`: for a dark-only app that does not force night mode in
+  code, the `.DayNight` day-bucket inherits Material's **light** defaults for any unset color
+  role — so `.Dark` is required to guarantee dark in every system mode.)_
+- Dark-first: `values/themes.xml` and `values-night/themes.xml` carry the identical dark theme
+  body. Light theme is out of scope.
 - System bars: `statusBarColor` = `ink_900`, `navigationBarColor` = `ink_900`,
   light-on-dark icons (`isAppearanceLightStatusBars = false`), edge-to-edge friendly.
 

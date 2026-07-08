@@ -1,16 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Theme.EyeDTrack" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
-        <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/purple_200</item>
-        <item name="colorPrimaryVariant">@color/purple_700</item>
-        <item name="colorOnPrimary">@color/black</item>
-        <!-- Secondary brand color. -->
-        <item name="colorSecondary">@color/teal_200</item>
-        <item name="colorSecondaryVariant">@color/teal_200</item>
-        <item name="colorOnSecondary">@color/black</item>
-        <!-- Status bar color. -->
-        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
-        <!-- Customize your theme here. -->
+
+    <style name="Theme.EyeDTrack" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/blue_500</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryContainer">@color/blue_container</item>
+        <item name="colorOnPrimaryContainer">@color/blue_400</item>
+        <item name="colorSecondary">@color/blue_400</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="android:colorBackground">@color/ink_900</item>
+        <item name="colorSurface">@color/ink_800</item>
+        <item name="colorSurfaceContainerLow">@color/ink_800</item>
+        <item name="colorSurfaceContainer">@color/ink_700</item>
+        <item name="colorSurfaceContainerHigh">@color/ink_600</item>
+        <item name="colorOnSurface">@color/text_hi</item>
+        <item name="colorOnSurfaceVariant">@color/text_mid</item>
+        <item name="colorOutline">@color/ink_500</item>
+        <item name="colorOutlineVariant">@color/ink_400</item>
+        <item name="colorError">@color/red_500</item>
+        <item name="colorOnError">@color/white</item>
+        <item name="stateSafe">@color/green_500</item>
+        <item name="stateSafeContainer">@color/green_container</item>
+        <item name="stateCaution">@color/amber_500</item>
+        <item name="stateCautionContainer">@color/amber_container</item>
+        <item name="stateAlert">@color/red_500</item>
+        <item name="stateAlertContainer">@color/red_container</item>
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.EyedTrack.Small</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.EyedTrack.Medium</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.EyedTrack.Large</item>
+        <item name="android:fontFamily">@font/inter</item>
+        <item name="fontFamily">@font/inter</item>
+        <item name="textAppearanceDisplaySmall">@style/TextAppearance.EyedTrack.Display</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.EyedTrack.Headline</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.EyedTrack.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.EyedTrack.TitleMedium</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.EyedTrack.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.EyedTrack.BodyMedium</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.EyedTrack.LabelLarge</item>
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.EyedTrack.LabelSmall</item>
+        <item name="materialButtonStyle">@style/Widget.EyedTrack.Button</item>
+        <item name="bottomNavigationStyle">@style/Widget.EyedTrack.BottomNav</item>
+        <item name="android:statusBarColor">@color/ink_900</item>
+        <item name="android:navigationBarColor">@color/ink_900</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
     </style>
 </resources>

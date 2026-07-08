@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Display — Sora 800 / 28sp -->
+    <style name="TextAppearance.EyedTrack.Display" parent="TextAppearance.Material3.DisplaySmall">
+        <item name="fontFamily">@font/sora</item>
+        <item name="android:fontFamily">@font/sora</item>
+        <item name="android:textFontWeight">800</item>
+        <item name="android:textSize">28sp</item>
+    </style>
+
+    <!-- Headline / H1 — Sora 700 / 24sp -->
+    <style name="TextAppearance.EyedTrack.Headline" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="fontFamily">@font/sora</item>
+        <item name="android:fontFamily">@font/sora</item>
+        <item name="android:textFontWeight">700</item>
+        <item name="android:textSize">24sp</item>
+    </style>
+
+    <!-- Title Large / H2 — Sora 600 / 20sp -->
+    <style name="TextAppearance.EyedTrack.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
+        <item name="fontFamily">@font/sora</item>
+        <item name="android:fontFamily">@font/sora</item>
+        <item name="android:textFontWeight">600</item>
+        <item name="android:textSize">20sp</item>
+    </style>
+
+    <!-- Title Medium — Inter 600 / 16sp -->
+    <style name="TextAppearance.EyedTrack.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
+        <item name="fontFamily">@font/inter</item>
+        <item name="android:fontFamily">@font/inter</item>
+        <item name="android:textFontWeight">600</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+
+    <!-- Body Large — Inter 400 / 15sp -->
+    <style name="TextAppearance.EyedTrack.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="fontFamily">@font/inter</item>
+        <item name="android:fontFamily">@font/inter</item>
+        <item name="android:textFontWeight">400</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
+    <!-- Body Medium — Inter 400 / 13sp -->
+    <style name="TextAppearance.EyedTrack.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
+        <item name="fontFamily">@font/inter</item>
+        <item name="android:fontFamily">@font/inter</item>
+        <item name="android:textFontWeight">400</item>
+        <item name="android:textSize">13sp</item>
+    </style>
+
+    <!-- Label Large — Inter 600 / 12sp -->
+    <style name="TextAppearance.EyedTrack.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
+        <item name="fontFamily">@font/inter</item>
+        <item name="android:fontFamily">@font/inter</item>
+        <item name="android:textFontWeight">600</item>
+        <item name="android:textSize">12sp</item>
+    </style>
+
+    <!-- Label Small / Caption — Inter 500 / 11sp -->
+    <style name="TextAppearance.EyedTrack.LabelSmall" parent="TextAppearance.Material3.LabelSmall">
+        <item name="fontFamily">@font/inter</item>
+        <item name="android:fontFamily">@font/inter</item>
+        <item name="android:textFontWeight">500</item>
+        <item name="android:textSize">11sp</item>
+    </style>
+</resources>

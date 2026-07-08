@@ -1,5 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- ===== Signal primitives — surfaces ===== -->
+    <color name="ink_900">#FF0A0F1C</color>
+    <color name="ink_800">#FF111A2D</color>
+    <color name="ink_700">#FF18233A</color>
+    <color name="ink_600">#FF1F2C48</color>
+    <color name="ink_500">#FF2A3654</color>
+    <color name="ink_400">#FF3A4A70</color>
+
+    <!-- ===== Signal primitives — primary ===== -->
+    <color name="blue_500">#FF3D7EFF</color>
+    <color name="blue_400">#FF5A93FF</color>
+    <color name="blue_600">#FF2E63D6</color>
+    <color name="blue_container">#FF16294D</color>
+
+    <!-- ===== Signal primitives — safety states ===== -->
+    <color name="green_500">#FF22C55E</color>
+    <color name="green_container">#FF10321F</color>
+    <color name="amber_500">#FFF59E0B</color>
+    <color name="amber_container">#FF3A2A0A</color>
+    <color name="red_500">#FFEF4444</color>
+    <color name="red_container">#FF3A1414</color>
+
+    <!-- ===== Signal primitives — text ===== -->
+    <color name="text_hi">#FFF1F5F9</color>
+    <color name="text_mid">#FFA9B6CE</color>
+    <color name="text_lo">#FF6B7A99</color>
+
+    <!-- ===== Legacy (retained until Plan 4 cleanup) ===== -->
     <color name="purple_200">#FFBB86FC</color>
     <color name="purple_500">#FF6200EE</color>
     <color name="purple_700">#FF3700B3</color>

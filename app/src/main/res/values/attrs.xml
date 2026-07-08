@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Safety-state color slots (Material 3 has no caution/safe roles) -->
+    <attr name="stateSafe" format="color" />
+    <attr name="stateSafeContainer" format="color" />
+    <attr name="stateCaution" format="color" />
+    <attr name="stateCautionContainer" format="color" />
+    <attr name="stateAlert" format="color" />
+    <attr name="stateAlertContainer" format="color" />
+</resources>
