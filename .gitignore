@@ -140,4 +140,7 @@ local.properties
 *.iml
 .cxx/
 sdk/.cxx/
-captures/ 
+captures/
+
+# Superpowers brainstorming visual-companion mockups/state
+.superpowers/
