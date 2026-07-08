@@ -18,10 +18,11 @@ _Every task's requirements implicitly include this section._
 - **Theme mode:** Dark-first, single theme. `values/themes.xml` and `values-night/themes.xml` are identical.
 - **Theme name stays `Theme.EyeDTrack`** (referenced by `AndroidManifest.xml`) — do not rename.
 - **Exact color tokens (verbatim):** `ink_900 #0A0F1C`, `ink_800 #111A2D`, `ink_700 #18233A`, `ink_600 #1F2C48`, `ink_500 #2A3654`, `ink_400 #3A4A70`, `blue_500 #3D7EFF`, `blue_400 #5A93FF`, `blue_600 #2E63D6`, `blue_container #16294D`, `green_500 #22C55E`, `green_container #10321F`, `amber_500 #F59E0B`, `amber_container #3A2A0A`, `red_500 #EF4444`, `red_container #3A1414`, `text_hi #F1F5F9`, `text_mid #A9B6CE`, `text_lo #6B7A99`.
-- **Fonts:** Sora (500/600/700/800) + Inter (400/500/600/700), **bundled** as static TTFs in `res/font/` (not downloadable fonts).
+- **Fonts:** Sora + Inter, **bundled as variable TTFs** in `res/font/` (offline-safe; not downloadable fonts). Weights are selected via `fontVariationSettings` in the font-family XML (Sora `wght` 500/600/700/800; Inter `opsz` 18 + `wght` 400/500/600/700).
 - **Backwards compatibility:** Retain the existing `@color/red`, `@color/green`, `@color/yellow`, `@color/white`, `@color/black`, `@color/purple_*`, `@color/teal_*` entries so current layouts keep compiling. They are removed in Plan 4 (cleanup).
 - **Branch:** `feat/uiux-overhaul-signal`.
-- **Build/verify command (Git Bash):** `./gradlew :app:assembleDebug` (PowerShell: `.\gradlew.bat :app:assembleDebug`). A task is "green" when this exits 0.
+- **Build toolchain (no JDK on PATH):** before any Gradle command, export `JAVA_HOME="/c/Users/user/android-build/jdk/jdk-17.0.19+10"` (Temurin 17). The Android SDK is wired via `local.properties` → `C:/Users/user/android-build/sdk`.
+- **Build/verify command (Git Bash):** `export JAVA_HOME="/c/Users/user/android-build/jdk/jdk-17.0.19+10"; ./gradlew :app:assembleDebug --console=plain`. A task is "green" when this prints `BUILD SUCCESSFUL` and exits 0.
 
 ---
 
@@ -36,8 +37,8 @@ Files created or modified in this plan (all under `app/src/main/`):
 - `res/values/styles.xml` — **create**: shape appearances + `Widget.EyedTrack.*` component styles.
 - `res/values/themes.xml` — **modify**: rebase to Material 3, map tokens/type/shape/components/system bars.
 - `res/values-night/themes.xml` — **modify**: mirror the dark theme (identical).
-- `res/font/inter.xml`, `res/font/sora.xml` — **create**: bundled font families.
-- `res/font/inter_regular.ttf` … `sora_extrabold.ttf` — **add**: 8 static TTF assets.
+- `res/font/inter.xml`, `res/font/sora.xml` — **create**: bundled variable font families.
+- `res/font/sora_variable.ttf`, `res/font/inter_variable.ttf` — **add**: 2 variable TTF assets (google/fonts via jsDelivr CDN).
 - `res/drawable/pill_safe.xml`, `pill_caution.xml`, `pill_alert.xml`, `pill_idle.xml` — **create**: status-pill backgrounds.
 - `res/drawable/ic_nav_dashboard.xml`, `ic_nav_monitor.xml`, `ic_nav_history.xml`, `ic_nav_account.xml`, `ic_logo_eye.xml`, `ic_chevron_right.xml` — **create**: core vector icons.
 
@@ -45,70 +46,73 @@ Files created or modified in this plan (all under `app/src/main/`):
 
 ---
 
-### Task 1: Bundle Sora + Inter fonts
+### Task 1: Bundle Sora + Inter fonts (variable)
 
 **Files:**
-- Add: `app/src/main/res/font/inter_regular.ttf`, `inter_medium.ttf`, `inter_semibold.ttf`, `inter_bold.ttf`, `sora_medium.ttf`, `sora_semibold.ttf`, `sora_bold.ttf`, `sora_extrabold.ttf`
-- Create: `app/src/main/res/font/inter.xml`, `app/src/main/res/font/sora.xml`
+- Add: `app/src/main/res/font/sora_variable.ttf`, `app/src/main/res/font/inter_variable.ttf`
+- Create: `app/src/main/res/font/sora.xml`, `app/src/main/res/font/inter.xml`
 
 **Interfaces:**
-- Produces: font families `@font/inter` (weights 400/500/600/700) and `@font/sora` (weights 500/600/700/800), consumed by the theme (Task 5) and type styles (Task 4).
+- Produces: font families `@font/sora` (weights 500/600/700/800) and `@font/inter` (weights 400/500/600/700), consumed by the theme (Task 5) and type styles (Task 4).
 
-- [ ] **Step 1: Obtain the TTF assets**
+- [ ] **Step 1: Download the two variable fonts**
 
-Download the static weights (OFL license) and place them in `app/src/main/res/font/` with these **exact lowercase names** (Android font resource names must be lowercase, letters/digits/underscore only):
+Both are OFL-licensed variable fonts from the `google/fonts` repo, fetched via the jsDelivr CDN (no rate-limit, unlike `raw.githubusercontent.com`). Run from the repo root in Git Bash:
 
-| Source family | Weight | Target filename |
-|---|---|---|
-| Inter | Regular 400 | `inter_regular.ttf` |
-| Inter | Medium 500 | `inter_medium.ttf` |
-| Inter | SemiBold 600 | `inter_semibold.ttf` |
-| Inter | Bold 700 | `inter_bold.ttf` |
-| Sora | Medium 500 | `sora_medium.ttf` |
-| Sora | SemiBold 600 | `sora_semibold.ttf` |
-| Sora | Bold 700 | `sora_bold.ttf` |
-| Sora | ExtraBold 800 | `sora_extrabold.ttf` |
-
-Get them from Google Fonts ("Download family" → the ZIP contains a `static/` folder with per-weight TTFs): Sora → https://fonts.google.com/specimen/Sora , Inter → https://fonts.google.com/specimen/Inter . Newer Inter ZIPs name files like `Inter_18pt-Regular.ttf`; use the `18pt` (default optical size) static weights and rename to the targets above.
-
-- [ ] **Step 2: Create the Inter font family**
-
-`app/src/main/res/font/inter.xml`:
-
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<font-family xmlns:app="http://schemas.android.com/apk/res-auto">
-    <font app:fontStyle="normal" app:fontWeight="400" app:font="@font/inter_regular" />
-    <font app:fontStyle="normal" app:fontWeight="500" app:font="@font/inter_medium" />
-    <font app:fontStyle="normal" app:fontWeight="600" app:font="@font/inter_semibold" />
-    <font app:fontStyle="normal" app:fontWeight="700" app:font="@font/inter_bold" />
-</font-family>
+```bash
+curl -fSL "https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/sora/Sora%5Bwght%5D.ttf" \
+  -o app/src/main/res/font/sora_variable.ttf
+curl -fSL "https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/inter/Inter%5Bopsz,wght%5D.ttf" \
+  -o app/src/main/res/font/inter_variable.ttf
+file app/src/main/res/font/sora_variable.ttf app/src/main/res/font/inter_variable.ttf
 ```
 
-- [ ] **Step 3: Create the Sora font family**
+Expected: both report `TrueType Font data` (sora ≈ 111 KB, inter ≈ 857 KB). Resource filenames **must stay lowercase** (`sora_variable.ttf`, `inter_variable.ttf`) — the upstream name `Sora[wght].ttf` is an invalid Android resource name.
+
+- [ ] **Step 2: Create the Sora family (single `wght` axis)**
 
 `app/src/main/res/font/sora.xml`:
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <font-family xmlns:app="http://schemas.android.com/apk/res-auto">
-    <font app:fontStyle="normal" app:fontWeight="500" app:font="@font/sora_medium" />
-    <font app:fontStyle="normal" app:fontWeight="600" app:font="@font/sora_semibold" />
-    <font app:fontStyle="normal" app:fontWeight="700" app:font="@font/sora_bold" />
-    <font app:fontStyle="normal" app:fontWeight="800" app:font="@font/sora_extrabold" />
+    <font app:fontStyle="normal" app:fontWeight="500" app:font="@font/sora_variable" app:fontVariationSettings="'wght' 500" />
+    <font app:fontStyle="normal" app:fontWeight="600" app:font="@font/sora_variable" app:fontVariationSettings="'wght' 600" />
+    <font app:fontStyle="normal" app:fontWeight="700" app:font="@font/sora_variable" app:fontVariationSettings="'wght' 700" />
+    <font app:fontStyle="normal" app:fontWeight="800" app:font="@font/sora_variable" app:fontVariationSettings="'wght' 800" />
+</font-family>
+```
+
+- [ ] **Step 3: Create the Inter family (pin `opsz` 18, vary `wght`)**
+
+`app/src/main/res/font/inter.xml`:
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<font-family xmlns:app="http://schemas.android.com/apk/res-auto">
+    <font app:fontStyle="normal" app:fontWeight="400" app:font="@font/inter_variable" app:fontVariationSettings="'opsz' 18, 'wght' 400" />
+    <font app:fontStyle="normal" app:fontWeight="500" app:font="@font/inter_variable" app:fontVariationSettings="'opsz' 18, 'wght' 500" />
+    <font app:fontStyle="normal" app:fontWeight="600" app:font="@font/inter_variable" app:fontVariationSettings="'opsz' 18, 'wght' 600" />
+    <font app:fontStyle="normal" app:fontWeight="700" app:font="@font/inter_variable" app:fontVariationSettings="'opsz' 18, 'wght' 700" />
 </font-family>
 ```
 
 - [ ] **Step 4: Build to verify the font resources compile**
 
-Run: `./gradlew :app:assembleDebug`
-Expected: `BUILD SUCCESSFUL`. (A missing/misnamed TTF fails with `resource font/… not found` — fix the filename.)
+Run (JAVA_HOME must be set — see Global Constraints):
+
+```bash
+export JAVA_HOME="/c/Users/user/android-build/jdk/jdk-17.0.19+10"
+./gradlew :app:assembleDebug --console=plain
+```
+
+Expected: `BUILD SUCCESSFUL`. A missing/misnamed TTF fails with `resource font/… not found`; if AAPT2 rejects `fontVariationSettings` on `<font>`, report it (fallback: reference the raw `@font/*_variable` file with `android:textFontWeight` on the text appearances instead).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add app/src/main/res/font/
-git commit -m "feat(ui): bundle Sora + Inter font families"
+git add app/src/main/res/font/sora_variable.ttf app/src/main/res/font/inter_variable.ttf app/src/main/res/font/sora.xml app/src/main/res/font/inter.xml
+git commit -m "feat(ui): bundle Sora + Inter variable font families"
 ```
 
 ---
