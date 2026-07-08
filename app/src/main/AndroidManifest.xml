@@ -78,10 +78,8 @@
         <activity android:name=".DataPrivacyActivity" android:exported="false" />
 
         <!-- Activity for viewing alert history logs -->
-        <activity android:name=".AlertHistoryActivity" android:exported="false" />
 
         <!-- Activity for modifying app settings -->
-        <activity android:name=".SettingsActivity" android:exported="false" />
 
         <!-- Activity for user profile information -->
         <activity android:name=".ProfileActivity" android:exported="false" />
@@ -90,10 +88,8 @@
         <activity android:name=".MainActivity" android:exported="false" />
 
         <!-- Main user dashboard after login -->
-        <activity android:name=".HomePageActivity" android:exported="false" />
 
         <!-- Live camera feed activity for monitoring -->
-        <activity android:name=".LiveFeedActivity" android:exported="false" />
 
         <!-- Terms and Conditions display activity -->
         <activity android:name=".TermsAndConditionsActivity" android:exported="false" />
