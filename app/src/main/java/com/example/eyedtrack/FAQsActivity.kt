@@ -1,10 +1,7 @@
 package com.example.eyedtrack
 
-import android.content.Intent
 import android.os.Bundle
 import android.view.View
-import android.view.WindowManager
-import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -16,36 +13,14 @@ class FAQsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Enable fullscreen mode by hiding the status bar.
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_FULLSCREEN,
-            WindowManager.LayoutParams.FLAG_FULLSCREEN
-        )
-
         // Set the layout resource for this activity.
         setContentView(R.layout.faqs)
 
-        // Initialize the back button to close the activity.
-        val backButton = findViewById<ImageView>(R.id.back_button)
-
-        // Initialize navigation buttons.
-        val btnGoToSettings = findViewById<ImageButton>(R.id.settings_icon)
-        val btnGoToProfileActivity = findViewById<ImageButton>(R.id.profile_icon)
-        val btnGoToHomePageActivity = findViewById<ImageButton>(R.id.home_icon)
-
-        // Handle back button click to close the activity.
-        backButton.setOnClickListener { finish() }
-
-        // Set click listeners for navigation buttons.
-        btnGoToProfileActivity.setOnClickListener {
-            startActivity(Intent(this, ProfileActivity::class.java))
-        }
-        btnGoToSettings.setOnClickListener {
-            startActivity(Intent(this, SettingsActivity::class.java))
-        }
-        btnGoToHomePageActivity.setOnClickListener {
-            startActivity(Intent(this, HomePageActivity::class.java))
-        }
+        // Wire the Signal top bar: back button closes the activity, title set programmatically.
+        val btnBack = findViewById<ImageView>(R.id.btn_back)
+        val titleView = findViewById<TextView>(R.id.top_bar_title)
+        btnBack.setOnClickListener { finish() }
+        titleView.text = "FAQs"
 
         // Initialize FAQ toggle functionality.
         setupFaqToggle(R.id.question_1, R.id.answer_1, R.id.icon_1)
