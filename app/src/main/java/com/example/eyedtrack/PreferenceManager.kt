@@ -23,6 +23,8 @@ object PreferenceManager {
     private const val KEY_REMEMBER_ME = "rememberMe"
     private const val KEY_REMEMBERED_EMAIL = "rememberedEmail"
     private const val KEY_REMEMBERED_PASSWORD = "rememberedPassword"
+    private const val KEY_SERVER_URL = "serverBaseUrl"
+    private const val DEFAULT_SERVER_URL = "http://192.168.1.16:5000/"
     private const val TAG = "PreferenceManager"
 
     // Helper to get the SharedPreferences instance.
@@ -266,5 +268,32 @@ object PreferenceManager {
             remove(KEY_REMEMBERED_PASSWORD)
             apply()
         }
+    }
+
+    // Normalize a raw URL string: ensure it starts with "http" and ends with exactly one "/".
+    private fun normalizeUrl(raw: String): String {
+        var url = raw.trim()
+        if (url.isEmpty()) return DEFAULT_SERVER_URL
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            url = "http://$url"
+        }
+        if (!url.endsWith("/")) {
+            url = "$url/"
+        }
+        return url
+    }
+
+    // Return the stored server base URL, or the default if none is saved.
+    fun getServerBaseUrl(context: Context): String {
+        val stored = getPreferences(context).getString(KEY_SERVER_URL, null)
+        return if (stored.isNullOrBlank()) DEFAULT_SERVER_URL else normalizeUrl(stored)
+    }
+
+    // Persist the server base URL after leniently normalizing the user-supplied value.
+    fun setServerBaseUrl(context: Context, url: String) {
+        val normalized = normalizeUrl(url)
+        getPreferences(context).edit()
+            .putString(KEY_SERVER_URL, normalized)
+            .apply()
     }
 }

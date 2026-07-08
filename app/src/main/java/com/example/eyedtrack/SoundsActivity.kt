@@ -8,8 +8,12 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.SeekBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.example.eyedtrack.api.ApiClient
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.materialswitch.MaterialSwitch
+import com.google.android.material.textfield.TextInputEditText
 
 // Activity for the "Notifications & Sounds" screen with system-integrated sound settings.
 class SoundsActivity : AppCompatActivity() {
@@ -20,6 +24,8 @@ class SoundsActivity : AppCompatActivity() {
     private lateinit var vibrateSwitch: MaterialSwitch
     private lateinit var volumeLabel: TextView
     private lateinit var sharedPreferences: SharedPreferences
+    private lateinit var serverUrlInput: TextInputEditText
+    private lateinit var saveServerUrlButton: MaterialButton
 
     // Called when the activity is created.
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,6 +40,7 @@ class SoundsActivity : AppCompatActivity() {
         // Initialize UI components
         initializeViews()
         setupVolumeControls()
+        setupServerControls()
         loadSettings()
 
         // Wire top bar: back button and title.
@@ -47,6 +54,8 @@ class SoundsActivity : AppCompatActivity() {
         volumeSeekBar = findViewById(R.id.volumeSeekBar)
         vibrateSwitch = findViewById(R.id.vibrateSwitch)
         volumeLabel = findViewById(R.id.volumeLabel)
+        serverUrlInput = findViewById(R.id.server_url_input)
+        saveServerUrlButton = findViewById(R.id.save_server_url)
     }
 
     private fun setupVolumeControls() {
@@ -92,6 +101,24 @@ class SoundsActivity : AppCompatActivity() {
         val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
         val progress = ((currentVolume.toFloat() / maxVolume.toFloat()) * 100).toInt()
         volumeSeekBar.progress = progress
+    }
+
+    private fun setupServerControls() {
+        // Prefill with current (or default) server URL
+        serverUrlInput.setText(PreferenceManager.getServerBaseUrl(this))
+
+        saveServerUrlButton.setOnClickListener {
+            val raw = serverUrlInput.text?.toString() ?: ""
+            PreferenceManager.setServerBaseUrl(this, raw)
+            // Refresh the field so it shows the normalized value
+            serverUrlInput.setText(PreferenceManager.getServerBaseUrl(this))
+            try {
+                ApiClient.initialize(applicationContext)
+            } catch (e: Exception) {
+                // Network may be unavailable; the saved URL will be used on next successful init
+            }
+            Toast.makeText(this, "Server address saved", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun loadSettings() {

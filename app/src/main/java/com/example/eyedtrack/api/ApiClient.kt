@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.util.Log
+import com.example.eyedtrack.PreferenceManager
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -16,14 +17,15 @@ import kotlinx.coroutines.delay
 
 object ApiClient {
     private const val TAG = "ApiClient"
-    private const val BASE_URL = "http://192.168.1.16:5000/"
+    private var baseUrl: String = "http://192.168.1.16:5000/"
     private var retrofit: Retrofit? = null
     private var apiService: ApiService? = null
     private lateinit var appContext: Context
 
     fun initialize(context: Context) {
         appContext = context.applicationContext
-        Log.d(TAG, "Initializing ApiClient with base URL: $BASE_URL")
+        baseUrl = PreferenceManager.getServerBaseUrl(appContext)
+        Log.d(TAG, "Initializing ApiClient with base URL: $baseUrl")
 
         if (!isNetworkAvailable()) {
             Log.e(TAG, "No network connection available")
@@ -68,7 +70,7 @@ object ApiClient {
 
         try {
             retrofit = Retrofit.Builder()
-                .baseUrl(BASE_URL)
+                .baseUrl(baseUrl)
                 .client(client)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()
@@ -110,7 +112,7 @@ object ApiClient {
             }
 
             try {
-                Log.d(TAG, "Testing connection to $BASE_URL (attempt ${attempts + 1}/$maxRetries)")
+                Log.d(TAG, "Testing connection to $baseUrl (attempt ${attempts + 1}/$maxRetries)")
                 val response = getApiService().healthCheck()
 
                 if (response.isSuccessful) {

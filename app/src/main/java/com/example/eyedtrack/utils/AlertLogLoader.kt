@@ -3,6 +3,7 @@ package com.example.eyedtrack.utils
 import android.content.Context
 import android.os.Environment
 import android.util.Log
+import com.example.eyedtrack.PreferenceManager
 import com.example.eyedtrack.model.AlertHistoryItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -261,9 +262,10 @@ class AlertLogLoader(private val context: Context) {
      * Load alerts from the backend API endpoint
      */
     private suspend fun loadAlertsFromAPI(maxLogs: Int = 50): List<AlertHistoryItem> = withContext(Dispatchers.IO) {
+        val base = PreferenceManager.getServerBaseUrl(context)
         // Try multiple endpoints in order of preference
         val endpoints = listOf(
-            "http://192.168.1.16:5000/api/alert_history?limit=$maxLogs",  // PC LAN IP — update if it changes
+            "${base}api/alert_history?limit=$maxLogs",  // configurable server URL (default: PC LAN IP)
             "http://127.0.0.1:5000/api/alert_history?limit=$maxLogs",  // Android emulator host
         )
         
@@ -458,9 +460,10 @@ class AlertLogLoader(private val context: Context) {
      * @return Triple<Boolean, Boolean, Boolean> representing (isDrowsy, isYawning, isDistracted)
      */
     fun readLatestBehaviorFlags(): Triple<Boolean, Boolean, Boolean> {
+        val base = PreferenceManager.getServerBaseUrl(context)
         // Try multiple endpoints in order of preference
         val endpoints = listOf(
-            "http://192.168.1.16:5000/api/latest_behavior",  // PC LAN IP — update if it changes
+            "${base}api/latest_behavior",  // configurable server URL (default: PC LAN IP)
             "http://10.0.2.2:5000/api/latest_behavior",  // Android emulator host
             "http://127.0.0.1:5000/api/latest_behavior"
         )
