@@ -147,3 +147,6 @@ captures/
 
 # uipro-installed design skills (removed; do not re-track)
 .claude/skills/
+
+# backend debug frame dump
+debug_last_frame.jpg

@@ -50,7 +50,13 @@ class ImprovedFaceAnalyzer:
         
         logger.info(f"🎯 Improved detection thresholds: EAR={self.ear_threshold}, MAR={self.mar_threshold}, "
                    f"Yaw=±{self.yaw_threshold}°, Pitch=±{self.pitch_threshold}°")
-        
+
+        # Cache the last frame rotation that found a face (phone frames arrive rotated);
+        # steady-state detection then tries that orientation first. _dbg_count throttles
+        # the debug-frame dump used to inspect exactly what the phone sends.
+        self._last_rot_idx = 0
+        self._dbg_count = 0
+
     def detect_face(self, frame: np.ndarray) -> Optional[dlib.rectangle]:
         """
         Detect face using dlib detector
@@ -84,7 +90,33 @@ class ImprovedFaceAnalyzer:
         except Exception as e:
             logger.error(f"❌ Error in face detection: {e}")
             return None
-    
+
+    def _oriented_face(self, frame: np.ndarray):
+        """
+        Orientation-robust face detection. Phone frames often arrive rotated 90/180/270,
+        and dlib's frontal detector only finds UPRIGHT faces — the #1 reason a mobile
+        client sees "no face detected". Try each rotation (starting with the last that
+        worked, for speed), upsampling once for smaller/farther faces, and return the
+        UPRIGHT (oriented_frame, face) for the first hit so all downstream landmark/
+        EAR/MAR/head-pose math runs on a correctly-oriented image.
+        """
+        rots = [None, cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_180, cv2.ROTATE_90_COUNTERCLOCKWISE]
+        order = [self._last_rot_idx] + [i for i in range(4) if i != self._last_rot_idx]
+        for idx in order:
+            oriented = frame if rots[idx] is None else cv2.rotate(frame, rots[idx])
+            try:
+                gray = cv2.cvtColor(oriented, cv2.COLOR_BGR2GRAY)
+                faces = self.detector(gray, 1)  # upsample=1 → detect smaller faces
+            except Exception as e:
+                logger.error(f"❌ Error detecting at rotation {idx}: {e}")
+                continue
+            if len(faces) > 0:
+                self._last_rot_idx = idx
+                if idx != 0:
+                    logger.debug(f"✅ Face found after rotating (rot idx {idx})")
+                return oriented, faces[0]
+        return frame, None
+
     def get_landmarks(self, frame: np.ndarray, face: dlib.rectangle) -> Optional[np.ndarray]:
         """
         Get 68-point facial landmarks using dlib
@@ -307,8 +339,8 @@ class ImprovedFaceAnalyzer:
                 result["debug_info"]["error"] = "Invalid frame"
                 return result
             
-            # Step 1: Detect face
-            face = self.detect_face(frame)
+            # Step 1: Detect face — orientation-robust (rotate the frame to upright).
+            frame, face = self._oriented_face(frame)
             if face is None:
                 result["debug_info"]["error"] = "No face detected"
                 return result

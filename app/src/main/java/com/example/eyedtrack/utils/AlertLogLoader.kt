@@ -263,7 +263,7 @@ class AlertLogLoader(private val context: Context) {
     private suspend fun loadAlertsFromAPI(maxLogs: Int = 50): List<AlertHistoryItem> = withContext(Dispatchers.IO) {
         // Try multiple endpoints in order of preference
         val endpoints = listOf(
-            "http://192.168.1.7:5000/api/alert_history?limit=$maxLogs",
+            "http://192.168.1.16:5000/api/alert_history?limit=$maxLogs",  // PC LAN IP — update if it changes
             "http://127.0.0.1:5000/api/alert_history?limit=$maxLogs",  // Android emulator host
         )
         
@@ -460,10 +460,9 @@ class AlertLogLoader(private val context: Context) {
     fun readLatestBehaviorFlags(): Triple<Boolean, Boolean, Boolean> {
         // Try multiple endpoints in order of preference
         val endpoints = listOf(
-            "http://127.0.0.1:5000/api/latest_behavior",
-            "http://localhost:5000/api/latest_behavior", 
+            "http://192.168.1.16:5000/api/latest_behavior",  // PC LAN IP — update if it changes
             "http://10.0.2.2:5000/api/latest_behavior",  // Android emulator host
-            "http://192.168.1.7:5000/api/latest_behavior"  // Original IP
+            "http://127.0.0.1:5000/api/latest_behavior"
         )
         
         for ((index, endpoint) in endpoints.withIndex()) {

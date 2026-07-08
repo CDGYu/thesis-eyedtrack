@@ -219,7 +219,7 @@ class CameraService(
 
             // Rotate bitmap if needed (front camera images are mirrored)
             val matrix = Matrix().apply {
-                postRotate(90f)
+                postRotate(image.imageInfo.rotationDegrees.toFloat())
                 if (camera?.cameraInfo?.lensFacing == CameraSelector.LENS_FACING_FRONT) {
                     postScale(-1f, 1f)
                 }

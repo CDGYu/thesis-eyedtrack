@@ -16,7 +16,7 @@ import kotlinx.coroutines.delay
 
 object ApiClient {
     private const val TAG = "ApiClient"
-    private const val BASE_URL = "http://192.168.1.7:5000/"
+    private const val BASE_URL = "http://192.168.1.16:5000/"
     private var retrofit: Retrofit? = null
     private var apiService: ApiService? = null
     private lateinit var appContext: Context
