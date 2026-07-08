@@ -56,6 +56,14 @@
         <item name="android:textSize">12sp</item>
     </style>
 
+    <!-- Button label — Inter 700 / 14sp (qualifies as WCAG "large text", AA 3:1) -->
+    <style name="TextAppearance.EyedTrack.Button" parent="TextAppearance.Material3.LabelLarge">
+        <item name="fontFamily">@font/inter</item>
+        <item name="android:fontFamily">@font/inter</item>
+        <item name="android:textFontWeight">700</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+
     <!-- Label Small / Caption — Inter 500 / 11sp -->
     <style name="TextAppearance.EyedTrack.LabelSmall" parent="TextAppearance.Material3.LabelSmall">
         <item name="fontFamily">@font/inter</item>

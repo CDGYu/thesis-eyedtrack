@@ -34,7 +34,8 @@
         android:id="@+id/previewView"
         android:layout_width="match_parent" android:layout_height="0dp"
         android:layout_weight="1" app:scaleType="fitCenter"
-        android:background="@color/ink_900" />
+        android:background="@color/ink_900"
+        android:contentDescription="Camera preview" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_toggle_monitoring"

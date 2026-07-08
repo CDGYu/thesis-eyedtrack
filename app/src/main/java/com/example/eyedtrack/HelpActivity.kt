@@ -1,10 +1,9 @@
 package com.example.eyedtrack
 
-import android.content.Intent
 import android.os.Bundle
-import android.view.WindowManager
-import android.widget.ImageButton
+import android.view.View
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayout
@@ -18,12 +17,12 @@ class HelpActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // full-screen
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_FULLSCREEN,
-            WindowManager.LayoutParams.FLAG_FULLSCREEN
-        )
         setContentView(R.layout.help)
+
+        // Wire top bar
+        val topBar = findViewById<View>(R.id.top_bar)
+        topBar.findViewById<ImageView>(R.id.btn_back).setOnClickListener { finish() }
+        topBar.findViewById<TextView>(R.id.top_bar_title).text = "Help"
 
         viewPager = findViewById(R.id.viewPager)
         tabLayout = findViewById(R.id.tabLayout)
@@ -41,7 +40,7 @@ class HelpActivity : AppCompatActivity() {
         // slide sections
         val pageSections = listOf(
             listOf(
-                "Mount the Camera"    to "Place EyeDTrack camera on your dashboard or windshield for a clear view of the driver’s face.",
+                "Mount the Camera"    to "Place EyeDTrack camera on your dashboard or windshield for a clear view of the driver's face.",
                 "Power On the Device" to "Ensure the system is connected to a power source and turn it on.",
                 "Connect to the App"  to "Open the EyeDTrack app on your device and follow the on-screen instructions to pair it with the system."
             ),
@@ -91,17 +90,5 @@ class HelpActivity : AppCompatActivity() {
             override fun onTabUnselected(tab: TabLayout.Tab) {}
             override fun onTabReselected(tab: TabLayout.Tab) {}
         })
-
-        // bottom bar / header nav
-        findViewById<ImageView>(R.id.back_button).setOnClickListener { finish() }
-        findViewById<ImageButton>(R.id.home_icon).setOnClickListener {
-            startActivity(Intent(this, HomePageActivity::class.java))
-        }
-        findViewById<ImageButton>(R.id.profile_icon).setOnClickListener {
-            startActivity(Intent(this, ProfileActivity::class.java))
-        }
-        findViewById<ImageButton>(R.id.settings_icon).setOnClickListener {
-            startActivity(Intent(this, SettingsActivity::class.java))
-        }
     }
 }
