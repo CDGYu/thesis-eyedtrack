@@ -134,14 +134,19 @@ The persistence layer is **functional and structurally sound**. The gaps are *co
 
 ---
 
-## Recommendations (follow-ups, not done here)
+## Recommendations
 
-1. **Error handling** — return **400** (not 500) for undecodable frames and stop returning `traceback` in responses.
-2. **Wire the dead write paths** *(if the tables are wanted)* — call `log_alert` at alert onset and `log_performance_metrics` per N frames; otherwise drop the two tables + methods to match reality.
-3. **Session lifecycle** — call `end_monitoring_session` via an `atexit`/signal shutdown hook so sessions close.
-4. **Reloader duplication** — run with `use_reloader=False` (or `debug=False` / a real WSGI server) in anything but local dev to stop double sessions; `debug=True` also exposes the Werkzeug debugger.
-5. **Read parity** — either surface the MySQL history in the app (via `/api/db/behaviors/recent`) or accept file-based history as the source of truth and treat MySQL as analytics-only.
-6. **Schema polish (optional)** — int FKs to `monitoring_sessions.id`; add a `timestamp` index for time-range queries.
+**Applied on this branch (2026-07-09):**
+- ✅ **Error handling** — `/api/process_frame` now returns **400** for missing / malformed-JSON / undecodable frames and **no longer leaks `traceback`** (or the raw request body) in responses; genuine faults log the traceback server-side and return a generic 500. (`main.py`)
+- ✅ **`alert_logs` now fills** — behavior onsets write a `driver_behaviors` **and** an `alert_logs` row via a shared `_persist_onsets` helper (severity: drowsy/distracted=high, yawning=medium). (`main.py`)
+- ✅ **Session lifecycle** — an `atexit` hook calls `end_monitoring_session` on shutdown, so sessions close (`status=completed`, `end_time` set). Best-effort: runs on normal exit / Ctrl+C, not on a forced kill.
+- ✅ **DB password via `.env`** — `config_loader` auto-loads a gitignored `.env` (real env vars still win), so plain `python main.py` connects to MySQL without an inline prefix. Template committed as `.env.example`.
+
+**Still open (out of scope / optional):**
+- **`performance_metrics`** still has no writer — wire `log_performance_metrics` per N frames if the table is wanted, else drop it. (Deliberately left; not requested.)
+- **Reloader duplication** — run with `use_reloader=False` (or `debug=False` / a real WSGI server) outside local dev to stop the 2-sessions-per-launch; `debug=True` also exposes the Werkzeug debugger. (Session-close now cleans the orphan on shutdown.)
+- **Read parity** — either surface MySQL history in the app (via `/api/db/behaviors/recent`) or keep file-based history as the source of truth and treat MySQL as analytics-only.
+- **Schema polish (optional)** — int FKs to `monitoring_sessions.id`; add a `timestamp` index for time-range queries.
 
 ## Setup runbook (reproducible)
 
@@ -154,6 +159,9 @@ GRANT ALL PRIVILEGES ON eyedtrack_db.* TO 'eyedtrack_app'@'localhost';
 FLUSH PRIVILEGES;
 ```
 ```bash
-# config.yaml: integration.database.enabled: true (already set)
-EYEDTRACK_DB_PASSWORD=eyedtrack_pw python main.py   # tables auto-create on first connect
+# config.yaml: integration.database.enabled: true (already set).
+# Preferred: put the password in a gitignored .env (copy .env.example), then just:
+python main.py                                      # config_loader auto-loads .env; tables auto-create
+# Or pass it inline (a real env var overrides .env):
+EYEDTRACK_DB_PASSWORD=eyedtrack_pw python main.py
 ```

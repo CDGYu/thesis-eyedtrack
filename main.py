@@ -15,6 +15,7 @@ from datetime import datetime
 from pathlib import Path
 import sys
 import traceback
+import atexit
 from flask import Flask, request, jsonify, make_response
 from flask_cors import CORS
 import json
@@ -93,6 +94,43 @@ def _db_behavior_rows(result):
                 'additional_metrics': {'behavior_category': bc},
             })
     return rows
+
+
+# Severity written to alert_logs for each behavior (AlertLog.severity is varchar(20)).
+_ALERT_SEVERITY = {'drowsy': 'high', 'distracted': 'high', 'yawning': 'medium'}
+
+
+def _persist_onsets(result, newly_on):
+    """Persist each JUST-turned-on (onset) behavior to MySQL: one driver_behaviors row AND
+    one alert_logs row per behavior. No-op unless persistence is enabled. Never raises — a DB
+    failure must not break the /api/process_frame response (file logging stays authoritative)."""
+    if db_manager is None or db_session_id is None or not newly_on:
+        return
+    try:
+        for row in _db_behavior_rows(result):
+            if row['behavior'] not in newly_on:
+                continue
+            db_manager.log_behavior(db_session_id, row)
+            db_manager.log_alert(db_session_id, {
+                'type': row['behavior'],
+                'severity': _ALERT_SEVERITY.get(row['behavior'], 'medium'),
+                'message': f"{row['behavior']} detected (confidence {row['confidence']:.2f})",
+            })
+    except Exception as db_err:
+        logger.error(f"MySQL onset persist failed: {db_err}")
+
+
+def _end_db_session_on_exit(manager, sid):
+    """atexit hook: mark the monitoring session completed on shutdown. Best-effort — it will
+    not run on a forced kill (taskkill /F), but does on a normal exit / Ctrl+C. Guarded so a
+    failure here never blocks interpreter exit."""
+    try:
+        if manager is not None and sid is not None:
+            manager.end_monitoring_session(sid)
+            logger.info(f"Closed monitoring session {sid} on shutdown")
+    except Exception as e:
+        logger.error(f"Failed to close monitoring session {sid}: {e}")
+
 
 @app.before_request
 def log_request_info():
@@ -185,6 +223,7 @@ def initialize_system(config_path=DEFAULT_CONFIG_PATH):
                     device_info={"source": "eyedtrack-api"}
                 )
                 logger.info(f"✅ MySQL persistence enabled (db session {db_session_id})")
+                atexit.register(_end_db_session_on_exit, db_manager, db_session_id)
             except Exception as db_err:
                 logger.error(f"⚠️ MySQL persistence disabled — DatabaseManager init failed: {db_err}")
                 db_manager = None
@@ -491,8 +530,9 @@ def process_frame():
     logger.debug("Content-Length: %s", request.content_length)
     
     try:
-        # Get data from request
-        data = request.get_json()
+        # Get data from request. silent=True -> malformed JSON returns None (handled as 400
+        # below) instead of raising a 400 that our except would turn into a 500.
+        data = request.get_json(silent=True)
         logger.debug("Received data keys: %s", list(data.keys()) if data else None)
         
         if not data or 'frame' not in data:
@@ -507,8 +547,17 @@ def process_frame():
         frame_data = data['frame']
         logger.debug("Frame data length: %d", len(frame_data) if frame_data else 0)
 
-        # Convert base64 frame to CV2 image
-        frame = base64_to_cv2(data['frame'])
+        # Convert base64 frame to CV2 image. A decode failure means the client sent a bad
+        # frame -> 400 (not 500), and we never echo internals back to the caller.
+        try:
+            frame = base64_to_cv2(data['frame'])
+        except (ValueError, TypeError) as decode_err:
+            logger.warning(f"Bad frame in /api/process_frame: {decode_err}")
+            return jsonify({
+                'success': False,
+                'error': 'Invalid or undecodable frame',
+                'timestamp': datetime.now().isoformat()
+            }), 400
         logger.debug("Successfully converted frame to CV2 image. Shape: %s", frame.shape if frame is not None else None)
         
         # Process the frame
@@ -539,16 +588,12 @@ def process_frame():
             except Exception as log_err:
                 logger.error(f"File log_event failed: {log_err}")
 
-            # MySQL: persist a row for each behavior that JUST turned on (its onset), if enabled.
-            if db_manager is not None and db_session_id is not None and any(current_state):
+            # MySQL: persist onsets (a driver_behaviors + an alert_logs row) for each behavior
+            # that JUST turned on, if persistence is enabled.
+            if any(current_state):
                 names = ('drowsy', 'yawning', 'distracted')
                 newly_on = {names[i] for i in range(3) if current_state[i] and not _last_behavior_state[i]}
-                try:
-                    for row in _db_behavior_rows(result):
-                        if row['behavior'] in newly_on:
-                            db_manager.log_behavior(db_session_id, row)
-                except Exception as db_err:
-                    logger.error(f"MySQL log_behavior failed: {db_err}")
+                _persist_onsets(result, newly_on)
 
             _last_behavior_state = current_state
 
@@ -568,15 +613,13 @@ def process_frame():
         
         return jsonify(response)
         
-    except Exception as e:
-        error_msg = f"Error processing frame: {str(e)}"
-        logger.error(error_msg)
-        logger.error(traceback.format_exc())
-        logger.error(f"Request data: {request.get_data(as_text=True)}")
+    except Exception:
+        # Genuine server-side failure: log the full traceback server-side only; do NOT leak
+        # it (or the raw request body) back to the client.
+        logger.exception("Unexpected error processing frame")
         return jsonify({
             'success': False,
-            'error': error_msg,
-            'traceback': traceback.format_exc(),
+            'error': 'Internal error processing frame',
             'timestamp': datetime.now().isoformat()
         }), 500
 

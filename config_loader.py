@@ -160,12 +160,37 @@ def update_config(base_config, update_dict):
         else:
             base_config[key] = value
 
+
+def _load_dotenv(dotenv_path=None):
+    """Minimal .env loader (no external dependency). For each ``KEY=VALUE`` line, set
+    os.environ only if KEY is not already in the real environment (a real env var always
+    wins). Looks for a .env next to this file by default; silently no-ops if it is missing
+    or unreadable. Lets the DB password live in a gitignored .env instead of the shell."""
+    path = dotenv_path or os.path.join(CURRENT_DIR, '.env')
+    if not os.path.exists(path):
+        return
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            for raw in f:
+                line = raw.strip()
+                if not line or line.startswith('#') or '=' not in line:
+                    continue
+                key, _, value = line.partition('=')
+                key = key.strip()
+                value = value.strip().strip('"').strip("'")
+                if key and key not in os.environ:
+                    os.environ[key] = value
+    except Exception as e:
+        logger.warning(f"Could not read .env file at {path}: {e}")
+
+
 def load_config(config_path=None):
     """Load configuration: start from DEFAULT_CONFIG and deep-merge YAML overrides on top.
 
     Single source of truth is the module-level DEFAULT_CONFIG. The YAML file only needs to
     specify the keys it wants to override; everything else falls back to the defaults.
     """
+    _load_dotenv()  # populate os.environ from a local .env (real env wins) before reading DB_* vars
     config = copy.deepcopy(DEFAULT_CONFIG)
     try:
         # Pick the config file: explicit path first, then ./config.yaml.
