@@ -456,15 +456,63 @@ def get_latest_behavior():
             }
         }), 500
 
+def _alert_history_from_db(limit):
+    """Build the alert_history 'alerts[]' payload from MySQL driver_behaviors, shaped exactly
+    like the file-log entries the Android app parses (timestamp / behavior_category /
+    behavior_confidence / ear / mar / pitch|yaw|roll). Most-recent first."""
+    alerts = []
+    for b in db_manager.get_recent_behaviors(hours=24 * 365, limit=limit):
+        if not b.get('is_risky'):
+            continue
+        hp = b.get('head_pose') or {}
+        add = b.get('additional_metrics') or {}
+        bc = add.get('behavior_category') or {
+            'is_drowsy': b.get('behavior') == 'drowsy',
+            'is_yawning': b.get('behavior') == 'yawning',
+            'is_distracted': b.get('behavior') == 'distracted',
+        }
+        alerts.append({
+            'timestamp': b.get('timestamp'),
+            'behavior_category': bc,
+            'behavior_confidence': b.get('confidence', 0.0),
+            'behavior_output': 'RISKY BEHAVIOR DETECTED',
+            'ear': b.get('ear') or 0.0,
+            'mar': b.get('mar') or 0.0,
+            'yaw': hp.get('yaw', 0.0),
+            'pitch': hp.get('pitch', 0.0),
+            'roll': hp.get('roll', 0.0),
+        })
+    return alerts
+
+
 @app.route('/api/alert_history', methods=['GET'])
 def get_alert_history():
-    """Return recent risky behavior alerts from driver_monitoring.json.
+    """Return recent risky behavior alerts — from MySQL when persistence is enabled and has
+    data, otherwise from the driver_monitoring.json file log.
 
     Query params:
       - limit (int): max number of alerts to return (default 100)
     """
     try:
         limit = request.args.get('limit', default=100, type=int)
+
+        # Prefer MySQL history when persistence is enabled AND has data; the file log stays
+        # the fallback (and covers the transition window before MySQL accumulates rows).
+        if db_manager is not None and db_session_id is not None:
+            try:
+                db_alerts = _alert_history_from_db(limit)
+                if db_alerts:
+                    return jsonify({
+                        'success': True,
+                        'alerts': db_alerts,
+                        'total_count': len(db_alerts),
+                        'returned_count': len(db_alerts),
+                        'latest_timestamp': db_alerts[0]['timestamp'],
+                        'api_timestamp': datetime.now().isoformat(),
+                        'source': 'mysql'
+                    }), 200
+            except Exception as db_err:
+                logger.error(f"alert_history MySQL read failed, using file log: {db_err}")
 
         log_file_path = os.path.join(str(log_dir), "driver_monitoring.json")
         abs_log_path = os.path.abspath(log_file_path)
@@ -523,7 +571,8 @@ def get_alert_history():
             'api_timestamp': datetime.now().isoformat(),
             'log_file_path': abs_log_path,
             'file_exists': True,
-            'file_size_bytes': file_size
+            'file_size_bytes': file_size,
+            'source': 'file'
         }), 200
 
     except Exception as e:
@@ -712,8 +761,12 @@ if __name__ == '__main__':
         host = config["integration"]["api"]["host"]
         port = config["integration"]["api"]["port"]
         
-        logger.info(f"Starting server on {host}:{port}")
-        app.run(host=host, port=port, debug=True)
+        # Debugger configurable via EYEDTRACK_DEBUG (default on for dev). Reloader OFF so
+        # initialize_system() runs once per launch — with it on, the werkzeug reloader ran
+        # init in both the supervisor and worker, creating a duplicate monitoring_session.
+        debug_enabled = os.environ.get("EYEDTRACK_DEBUG", "true").strip().lower() in ("1", "true", "yes", "on")
+        logger.info(f"Starting server on {host}:{port} (debug={debug_enabled}, reloader=off)")
+        app.run(host=host, port=port, debug=debug_enabled, use_reloader=False)
         
     except Exception as e:
         logger.error(f"Failed to start server: {str(e)}")

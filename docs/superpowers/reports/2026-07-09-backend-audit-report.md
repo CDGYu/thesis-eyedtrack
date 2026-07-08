@@ -112,8 +112,8 @@ Auto-created by `Base.metadata.create_all` on connect. All **InnoDB**, `utf8mb4_
 ### C.4 Read-path audit
 
 - `/api/db/*` consume `get_recent_behaviors`, `get_session_summary`, `cleanup_old_data` — all functional.
-- **The Android app does not read MySQL** — it reads the file-backed `/api/alert_history`. So MySQL is effectively **write-only from the app's perspective** (a parallel store, dual-write but not dual-read).
-- **Duplicate session per launch:** with Flask `debug=True`, the werkzeug reloader runs `initialize_system()` twice (parent + child) → **2 `monitoring_sessions` rows per launch**; only the child serves requests, leaving an orphan session each time. Combined with C.3 (never closed), sessions accumulate as `active`.
+- **App read path (fixed 2026-07-09):** `/api/alert_history` (the endpoint the app calls) now serves MySQL history when persistence is enabled, with a file-log fallback — so MySQL is now **read, not just written**. At audit it was file-only (dual-write, not dual-read).
+- **Duplicate session per launch (fixed 2026-07-09):** at audit, Flask `debug=True`'s reloader ran `initialize_system()` twice → 2 `monitoring_sessions`/launch. Now `use_reloader=False` → **one session per launch** (and the shutdown hook closes it).
 
 ### C.5 End-to-end persistence — VERIFIED
 
@@ -142,11 +142,13 @@ The persistence layer is **functional and structurally sound**. The coverage gap
 - ✅ **`performance_metrics` now fills** — a sampled `_sample_performance` writes one row every ~30 processed frames: avg `processing_time` + `fps` (pipeline capacity = 1/avg processing time, so it can't blow up), plus `cpu_usage`/`memory_usage` when `psutil` is installed (else null). (`main.py`)
 - ✅ **Session lifecycle** — an `atexit` hook calls `end_monitoring_session` on shutdown, so sessions close (`status=completed`, `end_time` set). Best-effort: runs on normal exit / Ctrl+C, not on a forced kill.
 - ✅ **DB password via `.env`** — `config_loader` auto-loads a gitignored `.env` (real env vars still win), so plain `python main.py` connects to MySQL without an inline prefix. Template committed as `.env.example`.
+- ✅ **cpu/memory metrics** — `psutil` added to `requirements.txt`; `performance_metrics` rows now carry `cpu_usage`/`memory_usage` (null only if `psutil` is absent). Verified: `memory_usage` 118.6 MB populated.
+- ✅ **Reloader duplication fixed** — `app.run(use_reloader=False)`, so `initialize_system()` runs once per launch (verified: session count +1, not +2). Debugger now configurable via `EYEDTRACK_DEBUG` (default true; set false in production).
+- ✅ **Read parity** — `/api/alert_history` now serves **MySQL** history (`driver_behaviors` mapped to the exact shape the app parses) when persistence is enabled and has rows, falling back to the file log otherwise. A `source: mysql|file` field marks which. **No Android change** — the app calls the same endpoint. Verified live: `source: mysql`.
+- ✅ **`timestamp` index** — added on `driver_behaviors` / `alert_logs` / `performance_metrics` (`schema.py` for new deployments + applied to the live DB) for time-range queries.
 
-**Still open (optional):**
-- **Reloader duplication** — run with `use_reloader=False` (or `debug=False` / a real WSGI server) outside local dev to stop the 2-sessions-per-launch; `debug=True` also exposes the Werkzeug debugger. (Session-close now cleans the orphan on shutdown.)
-- **Read parity** — either surface MySQL history in the app (via `/api/db/behaviors/recent`) or keep file-based history as the source of truth and treat MySQL as analytics-only.
-- **Schema polish (optional)** — int FKs to `monitoring_sessions.id`; add a `timestamp` index for time-range queries.
+**Deliberately NOT done (recommended against):**
+- **Int FKs to `monitoring_sessions.id`** — converting the three `session_id` VARCHAR FKs to integer FKs is a data migration on live tables for negligible gain: the VARCHAR FK targets a UNIQUE indexed column and works fine, and `session_id` is also the human-readable key used across logs and the API. Cost/risk outweighs benefit — **keep the VARCHAR FKs**; revisit only if the tables grow very large.
 
 ## Setup runbook (reproducible)
 

@@ -16,6 +16,10 @@ pyyaml==6.0.1
 SQLAlchemy>=2.0
 PyMySQL>=1.0
 
+# System metrics (optional — populates cpu_usage/memory_usage in performance_metrics;
+# main.py imports it defensively, so those columns are simply null if it is absent)
+psutil>=5.9
+
 # Deployment
 gunicorn==21.2.0
 

@@ -22,7 +22,7 @@ class DriverBehavior(Base):
 
     id = Column(Integer, primary_key=True)
     session_id = Column(String(50), ForeignKey('monitoring_sessions.session_id'))
-    timestamp = Column(DateTime, nullable=False, default=datetime.utcnow)
+    timestamp = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
     behavior = Column(String(100), nullable=False)
     confidence = Column(Float, nullable=False)
     is_risky = Column(Boolean, nullable=False, default=False)
@@ -38,7 +38,7 @@ class AlertLog(Base):
 
     id = Column(Integer, primary_key=True)
     session_id = Column(String(50), ForeignKey('monitoring_sessions.session_id'))
-    timestamp = Column(DateTime, nullable=False, default=datetime.utcnow)
+    timestamp = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
     alert_type = Column(String(50), nullable=False)
     severity = Column(String(20), nullable=False)
     message = Column(String(200))
@@ -50,7 +50,7 @@ class PerformanceMetric(Base):
 
     id = Column(Integer, primary_key=True)
     session_id = Column(String(50), ForeignKey('monitoring_sessions.session_id'))
-    timestamp = Column(DateTime, nullable=False, default=datetime.utcnow)
+    timestamp = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
     fps = Column(Float)
     processing_time = Column(Float)
     memory_usage = Column(Float)
