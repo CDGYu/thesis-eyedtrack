@@ -9,6 +9,7 @@ dataset/spotcheck_flags.csv; calibrate/evaluate exclude the flagged rows.
 """
 import argparse
 import base64
+import html
 import sys
 from pathlib import Path
 
@@ -47,9 +48,10 @@ function exportFlags() {{
 
 def _figure(relpath, abspath):
     b64 = base64.b64encode(Path(abspath).read_bytes()).decode("ascii")
+    escaped_relpath = html.escape(relpath, quote=True)
     return (f'<figure><img src="data:image/jpeg;base64,{b64}">'
-            f'<figcaption>{relpath}</figcaption>'
-            f'<label class="bad"><input type="checkbox" data-relpath="{relpath}">'
+            f'<figcaption>{escaped_relpath}</figcaption>'
+            f'<label class="bad"><input type="checkbox" data-relpath="{escaped_relpath}">'
             f' wrong label</label></figure>')
 
 
