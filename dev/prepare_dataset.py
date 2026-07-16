@@ -39,7 +39,8 @@ MIN_TEST_WARN = 150
 
 
 def _images_under(d: Path):
-    return sorted(p for p in d.rglob("*")
+    """Direct (non-recursive) image children of d, sorted for determinism."""
+    return sorted(p for p in d.iterdir()
                   if p.suffix.lower() in cc.IMAGE_EXTS and p.is_file())
 
 
@@ -56,13 +57,9 @@ def discover_sources(raw_dir: Path):
             continue
         name = d.name.lower().replace(" ", "").replace("-", "_")
         if name in SOURCE_NAME_MAP:
-            direct = sorted(p for p in d.iterdir()
-                            if p.suffix.lower() in cc.IMAGE_EXTS and p.is_file())
-            sources[SOURCE_NAME_MAP[name]].extend(direct)
+            sources[SOURCE_NAME_MAP[name]].extend(_images_under(d))
         elif name == DANGEROUS:
-            direct = sorted(p for p in d.iterdir()
-                            if p.suffix.lower() in cc.IMAGE_EXTS and p.is_file())
-            sources["_dangerous"].extend(direct)
+            sources["_dangerous"].extend(_images_under(d))
     return sources
 
 
@@ -118,6 +115,25 @@ def plan_layout(sources, train_cap, test_cap):
     return plan
 
 
+def _unique_dest(dest: Path, p: Path) -> Path:
+    """Collision-free destination for copying p into dest; never overwrites.
+
+    Tries the plain basename first, then the immediate parent-dir-prefixed
+    name, then keeps appending an incrementing numeric suffix until a name
+    that doesn't already exist on disk is found. Deterministic given sorted
+    input order.
+    """
+    target = dest / p.name
+    if not target.exists():
+        return target
+    target = dest / f"{p.parent.name}_{p.name}"
+    n = 2
+    while target.exists():
+        target = dest / f"{p.parent.name}_{p.stem}_{n}{p.suffix}"
+        n += 1
+    return target
+
+
 def _archive_legacy(out_dir: Path, raw_dir: Path):
     old_test = out_dir / "test"
     if not old_test.exists():
@@ -161,11 +177,9 @@ def main(argv=None):
         dest = out_dir / split / cls
         dest.mkdir(parents=True, exist_ok=True)
         for p in paths:
-            target = dest / p.name
-            if target.exists():  # name collision across source dirs
-                target = dest / f"{p.parent.name}_{p.name}"
-            shutil.copy2(p, target)
-        counts[split][cls] = len(paths)
+            shutil.copy2(p, _unique_dest(dest, p))
+        # count actual files on disk rather than assume len(paths) is exact
+        counts[split][cls] = sum(1 for q in dest.iterdir() if q.is_file())
 
     manifest = {"train_cap": args.train_cap, "test_cap": args.test_cap,
                 "raw_dir": str(raw_dir), "counts": counts}

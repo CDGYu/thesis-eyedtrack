@@ -106,3 +106,86 @@ def test_main_missing_source_errors_but_continues(tmp_path, capsys):
     assert rc == 1  # something missing
     assert "kaggle datasets download -d banudeep/nthuddd2" in out
     assert (tmp_path / "dataset" / "train" / "is_yawning").exists()  # continued
+
+
+def test_copy_collision_never_overwrites_and_manifest_matches_disk(tmp_path):
+    """Finding 1 regression: 3+ sources sharing a basename AND an immediate
+    parent dir name must all survive under distinct names, with correct
+    contents, and MANIFEST.json counts must equal what's actually on disk.
+    """
+    raw = tmp_path / "raw"
+    contents = (b"AAA-source-0", b"BBB-source-1", b"CCC-source-2", b"DDD-source-3")
+    for i, content in enumerate(contents):
+        d = raw / f"set{i}" / "distracted"  # same immediate parent name each time
+        d.mkdir(parents=True)
+        (d / "0.jpg").write_bytes(content)
+        s = raw / f"set{i}" / "safedriving"
+        s.mkdir(parents=True)
+        (s / "0.jpg").write_bytes(content)
+
+    out = tmp_path / "dataset"
+    pd.main(["--raw-dir", str(raw), "--out-dir", str(out),
+             "--train-cap", "10", "--test-cap", "10"])
+
+    dist_dir = out / "train" / "is_distracted"
+    files = sorted(dist_dir.iterdir())
+    assert len(files) == len(contents)  # nothing silently overwritten
+    names = {f.name for f in files}
+    assert len(names) == len(contents)  # all distinct names
+    on_disk_contents = {f.read_bytes() for f in files}
+    assert on_disk_contents == set(contents)  # correct contents preserved
+
+    manifest = json.loads((out / "MANIFEST.json").read_text())
+    actual_on_disk = len(list(dist_dir.glob("*")))
+    assert manifest["counts"]["train"]["is_distracted"] == actual_on_disk == len(contents)
+
+
+def test_discover_finds_dangerousdriving_source(tmp_path):
+    """Finding 3a: the DangerousDriving discovery branch (elif name == DANGEROUS)."""
+    raw = tmp_path / "raw"
+    for i in range(5):
+        _touch(raw / "DangerousDriving" / f"dd{i}.jpg")  # mixed case, normalizes to DANGEROUS
+    src = pd.discover_sources(raw)
+    assert len(src["_dangerous"]) == 5
+    assert {p.name for p in src["_dangerous"]} == {f"dd{i}.jpg" for i in range(5)}
+
+
+def _make_dmd_raw(root: Path, n_train, n_test):
+    for i in range(n_train):
+        _touch(root / "dmd" / "train" / "Distracted" / f"d{i}.jpg")
+        _touch(root / "dmd" / "train" / "SafeDriving" / f"s{i}.jpg")
+    for i in range(n_test):
+        _touch(root / "dmd" / "test" / "Distracted" / f"dt{i}.jpg")
+        _touch(root / "dmd" / "test" / "SafeDriving" / f"st{i}.jpg")
+
+
+def _make_dangerous_raw(root: Path, n):
+    # the matched dir (literally named "dangerousdriving") must itself contain
+    # the images directly (discover_sources scans it non-recursively), and it
+    # must sit under a "test" ancestor for _path_split to route it to test.
+    for i in range(n):
+        _touch(root / "extra" / "test" / "dangerousdriving" / f"dd{i}.jpg")
+
+
+def test_dangerousdriving_tops_up_when_below_min_test_warn(tmp_path, monkeypatch):
+    """Finding 3b: top-up fires when pre-top-up test count < MIN_TEST_WARN."""
+    monkeypatch.setattr(pd, "MIN_TEST_WARN", 3)
+    raw = tmp_path / "raw"
+    _make_dmd_raw(raw, n_train=2, n_test=2)  # is_distracted test count = 2 < 3
+    _make_dangerous_raw(raw, n=4)
+
+    plan = pd.plan_layout(pd.discover_sources(raw), train_cap=10, test_cap=10)
+    test_names = {p.name for p in plan[("test", "is_distracted")]}
+    assert any(name.startswith("dd") for name in test_names)  # topped up
+
+
+def test_dangerousdriving_does_not_top_up_at_or_above_min_test_warn(tmp_path, monkeypatch):
+    """Finding 3b: top-up does NOT fire once pre-top-up test count >= MIN_TEST_WARN."""
+    monkeypatch.setattr(pd, "MIN_TEST_WARN", 2)
+    raw = tmp_path / "raw"
+    _make_dmd_raw(raw, n_train=2, n_test=2)  # is_distracted test count = 2, at threshold
+    _make_dangerous_raw(raw, n=4)
+
+    plan = pd.plan_layout(pd.discover_sources(raw), train_cap=10, test_cap=10)
+    test_names = {p.name for p in plan[("test", "is_distracted")]}
+    assert not any(name.startswith("dd") for name in test_names)  # not topped up
