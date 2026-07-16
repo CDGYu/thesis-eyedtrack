@@ -59,3 +59,21 @@ def test_main_writes_and_resumes_csv(tmp_path):
     # images are detection-verified, only the 6 IR distracted ones may miss
     parsed = cc.load_annotations(out)
     assert len(cc.valid_rows(parsed)) >= 24
+
+
+def test_main_pool_workers_writes_valid_csv(tmp_path):
+    """--workers 2 exercises the real multiprocessing.Pool path (spawn on
+    Windows): workers re-import annotate_dataset and build their own
+    dlib/analyzer objects via _init_worker. Slow (model load x2) but must
+    stay real — no mocking the pool."""
+    out = tmp_path / "ann_pool.csv"
+    rc = ad.main(["--dataset-dir", str(FIXTURE), "--out", str(out),
+                  "--workers", "2"])
+    assert rc == 0
+    with open(out, newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    assert len(rows) == 36
+    assert {r["relpath"] for r in rows} == {j[0] for j in ad.list_jobs(FIXTURE, done=set())}
+    # same detection-verified guarantee as the inline full-fixture run
+    parsed = cc.load_annotations(out)
+    assert len(cc.valid_rows(parsed)) >= 24
