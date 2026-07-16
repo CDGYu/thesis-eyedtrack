@@ -3,6 +3,7 @@
 Spec: docs/superpowers/specs/2026-07-16-threshold-calibration-design.md
 """
 import csv
+import re
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -86,3 +87,64 @@ def predict_row(behavior, row, th):
         return (abs(row["yaw"]) > th["yaw_threshold"]
                 or abs(row["pitch"]) > th["pitch_threshold"])
     raise ValueError(f"unknown behavior: {behavior}")
+
+
+DETECTION_KEYS = ("ear_threshold", "mar_threshold",
+                  "yaw_threshold", "pitch_threshold")
+
+_KEY_LINE_RE = re.compile(r"^(\s+)([A-Za-z_]\w*):\s*(-?[\d.]+)\s*(#.*)?$")
+
+
+def _detection_block_span(lines):
+    """Return (start, end) line indices of the detection: block. end is exclusive."""
+    start = None
+    for i, ln in enumerate(lines):
+        if re.match(r"^detection:\s*(#.*)?$", ln):
+            start = i
+            break
+    if start is None:
+        raise ValueError("no 'detection:' section found in config text")
+    end = len(lines)
+    for j in range(start + 1, len(lines)):
+        if re.match(r"^[A-Za-z_]", lines[j]):  # next top-level key
+            end = j
+            break
+    return start, end
+
+
+def parse_detection_thresholds(config_text):
+    lines = config_text.splitlines()
+    start, end = _detection_block_span(lines)
+    found = {}
+    for i in range(start + 1, end):
+        m = _KEY_LINE_RE.match(lines[i])
+        if m and m.group(2) in DETECTION_KEYS:
+            found[m.group(2)] = float(m.group(3))
+    missing = set(DETECTION_KEYS) - set(found)
+    if missing:
+        raise ValueError(f"detection block is missing keys: {sorted(missing)}")
+    return found
+
+
+def edit_detection_thresholds(config_text, updates, note):
+    """Targeted line edit: change only the given keys inside detection:.
+
+    Preserves every other byte of the file (hand-written comments included).
+    """
+    ends_with_nl = config_text.endswith("\n")
+    lines = config_text.splitlines()
+    start, end = _detection_block_span(lines)
+    applied = set()
+    for i in range(start + 1, end):
+        m = _KEY_LINE_RE.match(lines[i])
+        if not m:
+            continue
+        indent, key, old, _comment = m.groups()
+        if key in updates:
+            lines[i] = (f"{indent}{key}: {updates[key]}"
+                        f"  # calibrated {note} (was {old})")
+            applied.add(key)
+    missing = set(updates) - applied
+    if missing:
+        raise ValueError(f"keys not found in detection block: {sorted(missing)}")
+    return "\n".join(lines) + ("\n" if ends_with_nl else "")
