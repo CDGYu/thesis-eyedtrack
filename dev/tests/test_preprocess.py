@@ -50,3 +50,16 @@ def test_is_grayscale_like():
     color = gray3.copy()
     color[:, :, 0] = 200
     assert cc.is_grayscale_like(color) is False
+
+
+def test_preprocess_empty_config_defaults_clahe_on():
+    """Empty config must still apply CLAHE (server default: enabled=True)."""
+    img = _gradient_bgr()
+    out = cc.preprocess_bgr(img, {})
+    assert out.shape == img.shape  # no performance section -> resize_factor 1.0 -> no resize
+    assert not np.array_equal(out, img)  # CLAHE applied by default
+
+
+def test_is_grayscale_like_2d_array():
+    frame = np.full((10, 10), 100, dtype=np.uint8)
+    assert cc.is_grayscale_like(frame) is True

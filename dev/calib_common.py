@@ -159,7 +159,7 @@ def preprocess_bgr(frame, config):
         frame = cv2.resize(frame, None, fx=rf, fy=rf)
 
     cl = config.get("clahe") or {}
-    if cl.get("enabled", False):
+    if cl.get("enabled", True):
         clahe = cv2.createCLAHE(
             clipLimit=float(cl.get("clip_limit", 2.0)),
             tileGridSize=tuple(int(t) for t in cl.get("base_tile_grid_size", [8, 8])),
