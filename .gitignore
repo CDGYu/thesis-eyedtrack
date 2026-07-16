@@ -150,3 +150,9 @@ captures/
 
 # backend debug frame dump
 debug_last_frame.jpg
+
+# Calibration data (regenerable; see docs/superpowers/specs/2026-07-16-threshold-calibration-design.md)
+dataset_raw/
+dataset/annotations.csv
+dataset/spotcheck.html
+dataset/spotcheck_flags.csv
