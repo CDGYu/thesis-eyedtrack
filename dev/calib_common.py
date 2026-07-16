@@ -148,3 +148,33 @@ def edit_detection_thresholds(config_text, updates, note):
     if missing:
         raise ValueError(f"keys not found in detection block: {sorted(missing)}")
     return "\n".join(lines) + ("\n" if ends_with_nl else "")
+
+
+def preprocess_bgr(frame, config):
+    """Replicate the live server's preprocess_frame (frame_processor.py:219-230)."""
+    import cv2
+
+    rf = float((config.get("performance") or {}).get("resize_factor", 1.0))
+    if rf != 1.0:
+        frame = cv2.resize(frame, None, fx=rf, fy=rf)
+
+    cl = config.get("clahe") or {}
+    if cl.get("enabled", False):
+        clahe = cv2.createCLAHE(
+            clipLimit=float(cl.get("clip_limit", 2.0)),
+            tileGridSize=tuple(int(t) for t in cl.get("base_tile_grid_size", [8, 8])),
+        )
+        lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
+        l, a, b = cv2.split(lab)
+        frame = cv2.cvtColor(cv2.merge((clahe.apply(l), a, b)), cv2.COLOR_LAB2BGR)
+    return frame
+
+
+def is_grayscale_like(frame):
+    """True if effectively monochrome (IR stored as RGB): channel spread <= 8."""
+    import numpy as np
+
+    if frame.ndim == 2 or frame.shape[2] == 1:
+        return True
+    spread = frame.max(axis=2).astype(np.int16) - frame.min(axis=2).astype(np.int16)
+    return bool(spread.max() <= 8)
