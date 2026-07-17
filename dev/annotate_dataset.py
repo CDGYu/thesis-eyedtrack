@@ -107,7 +107,7 @@ def main(argv=None):
         return 0
 
     out.parent.mkdir(parents=True, exist_ok=True)
-    new_file = not out.exists()
+    new_file = not out.exists() or out.stat().st_size == 0
     with open(out, "a", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=cc.CSV_FIELDS)
         if new_file:

@@ -134,6 +134,26 @@ def _unique_dest(dest: Path, p: Path) -> Path:
     return target
 
 
+def _archive_stale_csv(path: Path, archive_name: str):
+    """Rename an existing CSV to a fixed archive name, overwriting any
+    previous stale copy, and warn that a rebuild invalidated its relpaths.
+
+    dataset/train + dataset/test get fully rebuilt by main()'s non-dry-run
+    path; a rerun can leave the same relpath pointing at different image
+    content, so any CSV keyed by relpath (annotations, spotcheck flags) is
+    no longer trustworthy for resume/exclude logic and must not silently
+    keep flowing into calibration.
+    """
+    if not path.exists():
+        return
+    archive = path.with_name(archive_name)
+    if archive.exists():
+        archive.unlink()
+    path.rename(archive)
+    print(f"WARNING: {path.name} invalidated by dataset rebuild "
+          f"(relpaths now point at different images) -> archived to {archive.name}")
+
+
 def _archive_legacy(out_dir: Path, raw_dir: Path):
     old_test = out_dir / "test"
     if not old_test.exists():
@@ -161,6 +181,11 @@ def main(argv=None):
     for cls in missing:
         print(f"MISSING source for {cls}. Download it with:\n  {DOWNLOAD_HINTS[cls]}")
 
+    skipped_total = sum(_subject_split(sources[cls])[2]
+                         for cls in ("is_drowsy", "not_drowsy"))
+    if skipped_total > 0:
+        print(f"skipped {skipped_total} files without subject prefix")
+
     plan = plan_layout(sources, args.train_cap, args.test_cap)
 
     for (split, cls), paths in sorted(plan.items()):
@@ -170,6 +195,8 @@ def main(argv=None):
         return 1 if missing else 0
 
     _archive_legacy(out_dir, raw_dir)
+    _archive_stale_csv(out_dir / "annotations.csv", "annotations.stale.csv")
+    _archive_stale_csv(out_dir / "spotcheck_flags.csv", "spotcheck_flags.stale.csv")
     if (out_dir / "train").exists():
         shutil.rmtree(out_dir / "train")
     counts = {"train": {}, "test": {}}

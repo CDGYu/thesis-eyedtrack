@@ -51,6 +51,32 @@ def test_sweep_pose_uses_or_predicate():
     assert r["f1"] == 1.0
 
 
+def test_sweep_pose_picks_middle_of_tied_plateau():
+    """Pin sweep_pose's tie-break rule (its own docstring: pick the middle of
+    a tied max-F1 plateau, not its edge). Construction: positives constant at
+    yaw=40/pitch=40, negatives constant at yaw=10/pitch=10 — separable via
+    EITHER axis, which (with the fixed grid arange(5.0, 60.5, 0.5), 111
+    points, index k -> value 5.0 + 0.5*k) produces a broad tied F1=1.0
+    region. Verified by direct execution that the tied region is:
+      - tied rows (yaw_t where some pitch_t reaches best F1): contiguous
+        indices 10..110 (101 rows) -> middle index 10 + 101//2 = 60
+        -> yaw_grid[60] = 35.0
+      - within that row, tied cols (pitch_t reaching best F1): also
+        contiguous indices 10..110 (101 cols) -> middle index 60
+        -> pitch_grid[60] = 35.0
+    i.e. the rule's middle-of-plateau selection lands on the same index (60)
+    on both axes for this construction.
+    """
+    pos_yaw = [40.0] * 6
+    pos_pitch = [40.0] * 6
+    neg_yaw = [10.0] * 6
+    neg_pitch = [10.0] * 6
+    r = ct.sweep_pose(pos_yaw, pos_pitch, neg_yaw, neg_pitch)
+    assert r["yaw_threshold"] == 35.0
+    assert r["pitch_threshold"] == 35.0
+    assert r["f1"] == 1.0 and r["precision"] == 1.0 and r["recall"] == 1.0
+
+
 def test_load_flags(tmp_path):
     assert ct.load_flags(tmp_path / "absent.csv") == set()
     p = tmp_path / "flags.csv"

@@ -92,6 +92,63 @@ def test_main_copies_archives_and_writes_manifest(tmp_path):
             assert n == manifest["counts"][split][cls] > 0
 
 
+def test_main_archives_stale_annotations_and_flags_csv(tmp_path, capsys):
+    """A rerun of prepare_dataset rewrites dataset/train + dataset/test with
+    new pixels under the same relpaths; a pre-existing annotations.csv (or
+    spotcheck_flags.csv) would then have stale metrics silently attached to
+    new images on the next annotate resume. main() must archive both instead
+    of leaving them in place, overwriting any previous stale copy."""
+    _make_raw(tmp_path / "raw")
+    out = tmp_path / "dataset"
+    out.mkdir(parents=True)
+    ann = out / "annotations.csv"
+    ann.write_text("relpath,split\ntrain/is_drowsy/x.jpg,train\n", encoding="utf-8")
+    flags = out / "spotcheck_flags.csv"
+    flags.write_text("relpath\ntrain/is_drowsy/x.jpg\n", encoding="utf-8")
+    # a previous stale copy must be overwritten, not left behind or blocking
+    old_stale = out / "annotations.stale.csv"
+    old_stale.write_text("stale-from-earlier-rerun", encoding="utf-8")
+
+    rc = pd.main(["--raw-dir", str(tmp_path / "raw"), "--out-dir", str(out),
+                  "--train-cap", "5", "--test-cap", "2"])
+    assert rc == 0
+    out_text = capsys.readouterr().out
+
+    assert not ann.exists()
+    assert not flags.exists()
+    stale_ann = out / "annotations.stale.csv"
+    stale_flags = out / "spotcheck_flags.stale.csv"
+    assert stale_ann.exists() and stale_ann.read_text(encoding="utf-8") == \
+        "relpath,split\ntrain/is_drowsy/x.jpg,train\n"
+    assert stale_flags.exists() and stale_flags.read_text(encoding="utf-8") == \
+        "relpath\ntrain/is_drowsy/x.jpg\n"
+    assert "annotations.csv" in out_text and "invalidat" in out_text.lower()
+    assert "spotcheck_flags.csv" in out_text
+
+
+def test_main_no_stale_warning_when_no_annotations_csv(tmp_path, capsys):
+    _make_raw(tmp_path / "raw")
+    out = tmp_path / "dataset"
+    rc = pd.main(["--raw-dir", str(tmp_path / "raw"), "--out-dir", str(out),
+                  "--train-cap", "5", "--test-cap", "2"])
+    assert rc == 0
+    out_text = capsys.readouterr().out
+    assert "invalidat" not in out_text.lower()
+    assert not (out / "annotations.stale.csv").exists()
+
+
+def test_main_reports_skipped_files_without_subject_prefix(tmp_path, capsys):
+    """_make_raw plants exactly one no-prefix file (README.jpg, drowsy source
+    only); main() must surface that count instead of discarding it."""
+    _make_raw(tmp_path / "raw")
+    out = tmp_path / "dataset"
+    rc = pd.main(["--raw-dir", str(tmp_path / "raw"), "--out-dir", str(out),
+                  "--train-cap", "5", "--test-cap", "2"])
+    assert rc == 0
+    out_text = capsys.readouterr().out
+    assert "skipped 1 files without subject prefix" in out_text
+
+
 def test_main_missing_source_errors_but_continues(tmp_path, capsys):
     # only the yawn dataset present
     for i in range(4):

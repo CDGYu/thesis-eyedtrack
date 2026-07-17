@@ -156,3 +156,9 @@ dataset_raw/
 dataset/annotations.csv
 dataset/spotcheck.html
 dataset/spotcheck_flags.csv
+
+# dataset/train + dataset/test are regenerable (dev/prepare_dataset.py) but
+# still git-tracked; these entries take effect only after the operator runs
+# the runbook's post-merge `git rm -r --cached dataset/train dataset/test` (dev/README.md §2)
+dataset/train/
+dataset/test/

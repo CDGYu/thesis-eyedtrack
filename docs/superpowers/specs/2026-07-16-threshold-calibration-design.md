@@ -98,10 +98,10 @@ Outputs:
 
 Evaluates the **test split** as **three independent binary detectors** (positives vs their domain-matched negatives, instantaneous predicate with configured thresholds) — matching how the live system actually emits three independent flags, and fixing the argmax flaw. Produces:
 
-- Per-behavior sklearn `classification_report` (precision/recall/F1) + combined summary in `test_results/classification_report.txt`.
+- Per-behavior sklearn `classification_report` (precision/recall/F1) + combined summary in `test_results/classification_report.txt`. [Drift: the cross-behavior combined summary was not carried into the plan/implementation — the plan is the source of truth; each behavior's report stands alone.]
 - Per-behavior confusion-matrix PNGs and 2 sample-prediction figures per class (annotated image + metric values), replacing the old artifacts.
 - Per-class **exclusion rate** (no face / no landmarks) printed in every report.
-- `--config-override` flag to evaluate with arbitrary threshold values.
+- `--config-override` flag to evaluate with arbitrary threshold values. [Drift: `--config-override` was not carried into the plan/implementation; `thresholds.json["previous"]` already covers restoring prior values.]
 
 **Before/after protocol:** run the harness twice — current hand-tuned thresholds vs calibrated ones — same data, same protocol. The old 67% figure is not comparable (lost script, unknown confidence formula) and is reported only as historical context.
 

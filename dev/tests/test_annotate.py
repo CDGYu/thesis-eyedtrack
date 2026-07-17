@@ -61,6 +61,24 @@ def test_main_writes_and_resumes_csv(tmp_path):
     assert len(cc.valid_rows(parsed)) >= 24
 
 
+def test_main_treats_zero_byte_existing_file_as_new(tmp_path):
+    """A pre-existing but empty annotations.csv (e.g. left by a crashed run
+    or `touch`) must still get a header written, not headerless data rows
+    that would corrupt the next read (first data row misread as header)."""
+    out = tmp_path / "ann.csv"
+    out.touch()
+    assert out.exists() and out.stat().st_size == 0
+    rc = ad.main(["--dataset-dir", str(FIXTURE), "--out", str(out), "--workers", "0"])
+    assert rc == 0
+    with open(out, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        assert reader.fieldnames == cc.CSV_FIELDS
+        rows = list(reader)
+    assert len(rows) == 36
+    parsed = cc.load_annotations(out)
+    assert len(cc.valid_rows(parsed)) >= 24
+
+
 def test_main_pool_workers_writes_valid_csv(tmp_path):
     """--workers 2 exercises the real multiprocessing.Pool path (spawn on
     Windows): workers re-import annotate_dataset and build their own

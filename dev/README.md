@@ -27,6 +27,11 @@ The old dataset/train and dataset/test stop being tracked (they are now
 regenerable): `git rm -r --cached dataset/train dataset/test` once, then
 commit; history keeps the old images.
 
+Re-running this step invalidates any existing `annotations.csv` /
+`spotcheck_flags.csv` (relpaths would otherwise point at different image
+content) — the script archives them automatically to `annotations.stale.csv`
+/ `spotcheck_flags.stale.csv`.
+
 ## 3. Annotate (~30-60 min for ~20k images)
 
 ```bash
