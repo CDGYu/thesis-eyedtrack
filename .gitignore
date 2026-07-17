@@ -156,6 +156,7 @@ dataset_raw/
 dataset/annotations.csv
 dataset/spotcheck.html
 dataset/spotcheck_flags.csv
+dataset/*.stale.csv
 
 # dataset/train + dataset/test are regenerable (dev/prepare_dataset.py) but
 # still git-tracked; these entries take effect only after the operator runs
