@@ -112,7 +112,6 @@ driver_monitoring_logs/
 *.sqlite3
 
 # IDE files
-.vscode/
 .idea/
 *.swp
 *.swo
@@ -163,3 +162,7 @@ dataset/*.stale.csv
 # the runbook's post-merge `git rm -r --cached dataset/train dataset/test` (dev/README.md §2)
 dataset/train/
 dataset/test/
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat
+.gitignore
